@@ -1,0 +1,36 @@
+# local-only, never commit
+git_verify.md
+
+# Python
+__pycache__/
+*.pyc
+.venv/
+.pytest_cache/
+*.egg-info/
+
+# raw HMDA export (large, re-downloadable, not ours to redistribute)
+/data/raw/hmda/*.csv
+
+# processed datasets are regenerable via scripts/clean_hmda.py
+/data/processed/*.parquet
+
+# generated synthetic documents (Phase 2+)
+/data/documents/generated/*
+!/data/documents/generated/.gitkeep
+/data/documents/degraded/*
+!/data/documents/degraded/.gitkeep
+
+# user-uploaded documents (Phase 4+)
+/data/documents/uploaded/*
+!/data/documents/uploaded/.gitkeep
+
+# env files
+.env
+.env.local
+
+# local Postgres data volume mount points (if ever bind-mounted)
+/pgdata/
+
+# editors
+.vscode/
+.idea/

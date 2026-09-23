@@ -1,0 +1,25 @@
+name: verity-mortgage
+
+services:
+  postgres:
+    image: pgvector/pgvector:pg16
+    container_name: verity-mortgage-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: verity
+      POSTGRES_PASSWORD: verity_dev_password
+      POSTGRES_DB: verity_mortgage
+    ports:
+      - "5434:5432"
+    volumes:
+      - verity-mortgage-pgdata:/var/lib/postgresql/data
+      - ./infra/db/initdb:/docker-entrypoint-initdb.d:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U verity -d verity_mortgage"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+volumes:
+  verity-mortgage-pgdata:
+    name: verity-mortgage-pgdata

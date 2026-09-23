@@ -1,0 +1,13 @@
+income,loan_amount,property_value,debt_to_income_ratio,action_taken,derived_loan_product_type,loan_purpose,occupancy_type
+85,285000,320000,<20%,1,Conventional:First Lien,Home purchase,Principal residence
+62,190000,210000,36,3,FHA:First Lien,Home purchase,Principal residence
+140,410000,480000,30%-<36%,1,Conventional:First Lien,Refinancing,Principal residence
+0,150000,160000,20%-<30%,2,VA:First Lien,Home purchase,Principal residence
+95,260000,300000,>60%,7,Conventional:First Lien,Home purchase,Second residence
+NA,220000,240000,36%-<50%,6,Conventional:First Lien,Refinancing,Investment property
+75,200000,Exempt,42,1,FHA:First Lien,Home purchase,Principal residence
+110,320000,360000,,4,Conventional:First Lien,Home purchase,Principal residence
+55,175000,190000,Exempt,5,VA:First Lien,Refinancing,Principal residence
+130,,410000,38,1,Conventional:First Lien,Home purchase,Principal residence
+88,275000,310000,44,8,Conventional:First Lien,Home purchase,Principal residence
+70,205000,225000,<20%,99,Conventional:First Lien,Home purchase,Principal residence

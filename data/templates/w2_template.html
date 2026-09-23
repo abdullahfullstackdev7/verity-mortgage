@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<style>
+  body { font-family: Helvetica, Arial, sans-serif; font-size: 10pt; color: #1a1a1a; margin: 24px; }
+  .doc-title { font-size: 15pt; font-weight: bold; color: #1a2b4c; }
+  .doc-subtitle { font-size: 9pt; color: #555555; margin-bottom: 12px; }
+  table.parties { width: 100%; border: 1px solid #999999; margin-bottom: 14px; }
+  table.parties td { vertical-align: top; padding: 6px; font-size: 9.5pt; border-bottom: 1px solid #cccccc; }
+  .label { color: #555555; font-size: 8pt; }
+  table.boxes { width: 100%; border: 1px solid #999999; }
+  table.boxes th { background-color: #1a2b4c; color: #ffffff; text-align: left; padding: 5px 6px; font-size: 9pt; }
+  table.boxes td { border-top: 1px solid #cccccc; padding: 5px 6px; font-size: 9.5pt; }
+  .num { text-align: right; }
+  .footer-note { margin-top: 18px; font-size: 8pt; color: #777777; }
+</style>
+</head>
+<body>
+  <div class="doc-title">Wage and Tax Statement (Form W-2)</div>
+  <div class="doc-subtitle">Tax Year {{ tax_year }}</div>
+
+  <table class="parties">
+    <tr>
+      <td width="50%">
+        <div class="label">EMPLOYER NAME, ADDRESS, AND EIN</div>
+        {{ employer_name }}<br>
+        {{ employer_address }}<br>
+        EIN: {{ employer_ein }}
+      </td>
+      <td width="50%">
+        <div class="label">EMPLOYEE NAME, ADDRESS, AND SSN</div>
+        {{ employee_name }}<br>
+        {{ employee_address }}<br>
+        SSN: {{ employee_ssn_masked }}
+      </td>
+    </tr>
+  </table>
+
+  <table class="boxes">
+    <tr><th>Box</th><th class="num">Amount</th></tr>
+    <tr><td>1  Wages, tips, other compensation</td><td class="num">${{ '%.2f'|format(box1_wages) }}</td></tr>
+    <tr><td>2  Federal income tax withheld</td><td class="num">${{ '%.2f'|format(box2_fed_tax_withheld) }}</td></tr>
+    <tr><td>3  Social security wages</td><td class="num">${{ '%.2f'|format(box3_ss_wages) }}</td></tr>
+    <tr><td>4  Social security tax withheld</td><td class="num">${{ '%.2f'|format(box4_ss_tax) }}</td></tr>
+    <tr><td>5  Medicare wages and tips</td><td class="num">${{ '%.2f'|format(box5_medicare_wages) }}</td></tr>
+    <tr><td>6  Medicare tax withheld</td><td class="num">${{ '%.2f'|format(box6_medicare_tax) }}</td></tr>
+    <tr><td>15  State &mdash; {{ state }}</td><td class="num">&nbsp;</td></tr>
+    <tr><td>16  State wages, tips, etc.</td><td class="num">${{ '%.2f'|format(box16_state_wages) }}</td></tr>
+    <tr><td>17  State income tax</td><td class="num">${{ '%.2f'|format(box17_state_tax) }}</td></tr>
+  </table>
+
+  <div class="footer-note">
+    This is a synthetically generated document produced for a software demonstration,
+    formatted for readability and not intended to replicate the official IRS form layout.
+    It does not represent a real person or employer.
+  </div>
+</body>
+</html>

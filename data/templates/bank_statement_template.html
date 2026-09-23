@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<style>
+  body { font-family: Helvetica, Arial, sans-serif; font-size: 10pt; color: #1a1a1a; margin: 24px; }
+  .doc-title { font-size: 15pt; font-weight: bold; color: #1a2b4c; }
+  .doc-subtitle { font-size: 9pt; color: #555555; margin-bottom: 12px; }
+  table.header-block { width: 100%; margin-bottom: 14px; }
+  table.header-block td { vertical-align: top; padding: 2px 0; font-size: 9.5pt; }
+  .label { color: #555555; }
+  table.summary { width: 100%; border: 1px solid #999999; margin-top: 6px; margin-bottom: 14px; }
+  table.summary th { background-color: #1a2b4c; color: #ffffff; text-align: left; padding: 5px 6px; font-size: 9pt; }
+  table.summary td { border-top: 1px solid #cccccc; padding: 5px 6px; font-size: 9.5pt; }
+  table.transactions { width: 100%; border: 1px solid #999999; }
+  table.transactions th { background-color: #eef0f4; text-align: left; padding: 4px 6px; font-size: 8.5pt; border-bottom: 1px solid #999999; }
+  table.transactions td { border-top: 1px solid #dddddd; padding: 4px 6px; font-size: 8.5pt; }
+  .num { text-align: right; }
+  .footer-note { margin-top: 18px; font-size: 8pt; color: #777777; }
+</style>
+</head>
+<body>
+  <div class="doc-title">{{ bank_name }}</div>
+  <div class="doc-subtitle">Statement period {{ statement_period_start }} to {{ statement_period_end }}</div>
+
+  <table class="header-block">
+    <tr>
+      <td width="50%">
+        <div class="label">Account Holder</div>
+        {{ account_holder_name }}<br>
+        {{ account_holder_address }}
+      </td>
+      <td width="50%">
+        <div class="label">Account Number</div>
+        {{ account_number_masked }}
+      </td>
+    </tr>
+  </table>
+
+  <table class="summary">
+    <tr><th>Beginning Balance</th><th>Total Deposits</th><th>Total Withdrawals</th><th>Ending Balance</th></tr>
+    <tr>
+      <td class="num">${{ '%.2f'|format(beginning_balance) }}</td>
+      <td class="num">${{ '%.2f'|format(total_deposits) }}</td>
+      <td class="num">${{ '%.2f'|format(total_withdrawals) }}</td>
+      <td class="num">${{ '%.2f'|format(ending_balance) }}</td>
+    </tr>
+  </table>
+
+  <table class="transactions">
+    <tr><th>Date</th><th>Description</th><th class="num">Amount</th><th class="num">Balance</th></tr>
+    {% for txn in transactions %}
+    <tr>
+      <td>{{ txn.date }}</td>
+      <td>{{ txn.description }}</td>
+      <td class="num">{{ '-' if txn.amount < 0 else '' }}${{ '%.2f'|format(txn.amount|abs) }}</td>
+      <td class="num">${{ '%.2f'|format(txn.balance) }}</td>
+    </tr>
+    {% endfor %}
+  </table>
+
+  <div class="footer-note">
+    This is a synthetically generated document produced for a software demonstration.
+    It does not represent a real person, bank, or financial transaction.
+  </div>
+</body>
+</html>

@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<style>
+  body { font-family: Helvetica, Arial, sans-serif; font-size: 10pt; color: #1a1a1a; margin: 24px; }
+  .doc-title { font-size: 15pt; font-weight: bold; color: #1a2b4c; }
+  .doc-subtitle { font-size: 9pt; color: #555555; margin-bottom: 12px; }
+  table.header-block { width: 100%; margin-bottom: 14px; }
+  table.header-block td { vertical-align: top; padding: 2px 0; font-size: 9.5pt; }
+  .label { color: #555555; }
+  table.figures { width: 100%; border: 1px solid #999999; margin-top: 10px; }
+  table.figures th { background-color: #1a2b4c; color: #ffffff; text-align: left; padding: 5px 6px; font-size: 9pt; }
+  table.figures td { border-top: 1px solid #cccccc; padding: 5px 6px; font-size: 9.5pt; }
+  .num { text-align: right; }
+  .net-pay-row td { font-weight: bold; border-top: 2px solid #1a2b4c; }
+  .footer-note { margin-top: 18px; font-size: 8pt; color: #777777; }
+</style>
+</head>
+<body>
+  <div class="doc-title">Earnings Statement</div>
+  <div class="doc-subtitle">Pay period {{ pay_period_start }} to {{ pay_period_end }} &middot; Pay date {{ pay_date }}</div>
+
+  <table class="header-block">
+    <tr>
+      <td width="50%">
+        <div class="label">Employer</div>
+        {{ employer_name }}<br>
+        {{ employer_address }}
+      </td>
+      <td width="50%">
+        <div class="label">Employee</div>
+        {{ employee_name }}<br>
+        {{ employee_address }}<br>
+        <span class="label">SSN:</span> {{ ssn_masked }} &middot; <span class="label">Employee ID:</span> {{ employee_id }}
+      </td>
+    </tr>
+  </table>
+
+  <table class="figures">
+    <tr><th>Earnings</th><th class="num">Current</th><th class="num">Year to Date</th></tr>
+    <tr>
+      <td>Gross Pay ({{ pay_frequency }})</td>
+      <td class="num">${{ '%.2f'|format(gross_pay) }}</td>
+      <td class="num">${{ '%.2f'|format(ytd_gross) }}</td>
+    </tr>
+  </table>
+
+  <table class="figures">
+    <tr><th>Deductions</th><th class="num">Current</th><th class="num">Year to Date</th></tr>
+    <tr>
+      <td>Federal Income Tax</td>
+      <td class="num">${{ '%.2f'|format(federal_tax) }}</td>
+      <td class="num">${{ '%.2f'|format(ytd_federal_tax) }}</td>
+    </tr>
+    <tr>
+      <td>State Income Tax</td>
+      <td class="num">${{ '%.2f'|format(state_tax) }}</td>
+      <td class="num">${{ '%.2f'|format(ytd_state_tax) }}</td>
+    </tr>
+    <tr>
+      <td>Social Security</td>
+      <td class="num">${{ '%.2f'|format(social_security) }}</td>
+      <td class="num">${{ '%.2f'|format(ytd_social_security) }}</td>
+    </tr>
+    <tr>
+      <td>Medicare</td>
+      <td class="num">${{ '%.2f'|format(medicare) }}</td>
+      <td class="num">${{ '%.2f'|format(ytd_medicare) }}</td>
+    </tr>
+    <tr class="net-pay-row">
+      <td>Net Pay</td>
+      <td class="num">${{ '%.2f'|format(net_pay) }}</td>
+      <td class="num">${{ '%.2f'|format(ytd_net_pay) }}</td>
+    </tr>
+  </table>
+
+  <div class="footer-note">
+    This is a synthetically generated document produced for a software demonstration.
+    It does not represent a real person, employer, or payroll transaction.
+  </div>
+</body>
+</html>
