@@ -166,37 +166,9 @@ class TestCaseListingAndDetail:
         assert resp.status_code == 404
 
 
-class TestCaseStatusUpdate:
-    def test_underwriter_can_update_status(self, client, loan_officer, underwriter, applicant):
-        create_resp = client.post(
-            "/api/v1/cases",
-            json={"applicant_id": str(applicant)},
-            headers=_auth(loan_officer["token"]),
-        )
-        case_id = create_resp.json()["id"]
-
-        resp = client.patch(
-            f"/api/v1/cases/{case_id}/status",
-            json={"status": "under_review"},
-            headers=_auth(underwriter["token"]),
-        )
-        assert resp.status_code == 200
-        assert resp.json()["status"] == "under_review"
-
-    def test_loan_officer_cannot_update_status(self, client, loan_officer, applicant):
-        create_resp = client.post(
-            "/api/v1/cases",
-            json={"applicant_id": str(applicant)},
-            headers=_auth(loan_officer["token"]),
-        )
-        case_id = create_resp.json()["id"]
-
-        resp = client.patch(
-            f"/api/v1/cases/{case_id}/status",
-            json={"status": "under_review"},
-            headers=_auth(loan_officer["token"]),
-        )
-        assert resp.status_code == 403
+# Status transitions (submit-for-review / route / decision, with guards
+# and audit logging) are Phase 8's concern and covered in
+# tests/test_api_case_decisions.py.
 
 
 class TestDocumentUpload:

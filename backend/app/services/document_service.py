@@ -57,6 +57,14 @@ def save_document(
     return document
 
 
+def get_document_in_case(db: Session, case: Case, document_id: uuid.UUID) -> Document | None:
+    return (
+        db.query(Document)
+        .filter(Document.id == document_id, Document.case_id == case.id)
+        .one_or_none()
+    )
+
+
 def list_documents(db: Session, case: Case) -> list[Document]:
     return (
         db.query(Document)

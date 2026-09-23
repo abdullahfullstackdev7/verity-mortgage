@@ -29,6 +29,11 @@ class CaseSummary(Base):
     )
     generated_by_model: Mapped[str] = mapped_column(String(100), nullable=False)
     token_count: Mapped[Optional[int]] = mapped_column(Integer, nullable=True)
+    # SHA-256 of the case's discrepancy set at generation time. Lets the
+    # service detect "the underlying discrepancies changed" (per the Phase 7
+    # plan's caching rule) without re-running the rules engine or comparing
+    # timestamps the discrepancies table doesn't have.
+    discrepancy_fingerprint: Mapped[str] = mapped_column(String(64), nullable=False)
     created_at: Mapped[datetime] = mapped_column(server_default=func.now(), nullable=False)
 
     case: Mapped["Case"] = relationship(back_populates="summaries")
