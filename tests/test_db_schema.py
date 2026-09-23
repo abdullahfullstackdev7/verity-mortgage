@@ -9,13 +9,13 @@ from __future__ import annotations
 import uuid
 
 import pytest
+from conftest import requires_db
 from sqlalchemy import inspect, select, text
 from sqlalchemy.exc import IntegrityError
 
 from backend.app.db.base import SessionLocal, engine
 from backend.app.db.models import Applicant, Case
 from backend.app.db.models.enums import CaseStatus
-from conftest import requires_db
 
 pytestmark = requires_db
 
@@ -41,9 +41,7 @@ class TestSchema:
 
     def test_pgvector_extension_installed(self):
         with engine.connect() as conn:
-            row = conn.execute(
-                text("SELECT extname FROM pg_extension WHERE extname = 'vector'")
-            ).fetchone()
+            row = conn.execute(text("SELECT extname FROM pg_extension WHERE extname = 'vector'")).fetchone()
         assert row is not None
 
     def test_vector_columns_are_384_dimensional(self):
@@ -120,11 +118,7 @@ class TestConstraints:
                 session.commit()
         finally:
             session.rollback()
-            session.execute(
-                Applicant.__table__.delete().where(
-                    Applicant.hmda_source_id == shared_source_id
-                )
-            )
+            session.execute(Applicant.__table__.delete().where(Applicant.hmda_source_id == shared_source_id))
             session.commit()
             session.close()
 

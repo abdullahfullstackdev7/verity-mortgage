@@ -3,6 +3,7 @@ from __future__ import annotations
 import uuid
 
 import pytest
+from conftest import requires_db
 
 from backend.app.db.base import SessionLocal
 from backend.app.db.models.applicant import Applicant
@@ -18,7 +19,6 @@ from backend.app.services.case_state_machine import (
     check_required_documents_present,
     transition_case,
 )
-from conftest import requires_db
 
 
 class TestAllowedTransitionsTable:
@@ -123,12 +123,10 @@ class TestGuardsAndTransitionCase:
             )
         db.commit()
 
-        ok, reason = check_required_documents_extracted(db, c)
+        ok, _reason = check_required_documents_extracted(db, c)
         assert not ok
 
-        db.query(Document).filter(Document.case_id == c.id).update(
-            {Document.ocr_status: OcrStatus.COMPLETED}
-        )
+        db.query(Document).filter(Document.case_id == c.id).update({Document.ocr_status: OcrStatus.COMPLETED})
         db.commit()
 
         ok, _reason = check_required_documents_extracted(db, c)

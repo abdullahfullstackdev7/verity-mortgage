@@ -4,6 +4,7 @@ import uuid
 from pathlib import Path
 
 import pytest
+from conftest import requires_db
 
 from backend.app.db.base import SessionLocal
 from backend.app.db.models.applicant import Applicant
@@ -13,7 +14,6 @@ from backend.app.db.models.document_embedding import DocumentEmbedding
 from backend.app.db.models.enums import CaseStatus, DocumentType, OcrStatus
 from backend.app.db.models.extracted_field import ExtractedField
 from backend.app.services.extraction.pipeline import ExtractionError, extract_document
-from conftest import requires_db
 from generators.identity import build_identity
 from generators.paystub_generator import generate as generate_paystub
 
@@ -95,11 +95,7 @@ class TestExtractDocument:
         document = db.get(Document, case_with_paystub)
         extract_document(db, document)
 
-        embeddings = (
-            db.query(DocumentEmbedding)
-            .filter(DocumentEmbedding.document_id == document.id)
-            .all()
-        )
+        embeddings = db.query(DocumentEmbedding).filter(DocumentEmbedding.document_id == document.id).all()
         assert any(e.field_name == "employer_name" for e in embeddings)
         assert len(embeddings[0].embedding) == 384
         db.close()
@@ -116,9 +112,7 @@ class TestExtractDocument:
 
         assert first_ids == second_ids
 
-        count = (
-            db.query(ExtractedField).filter(ExtractedField.document_id == document.id).count()
-        )
+        count = db.query(ExtractedField).filter(ExtractedField.document_id == document.id).count()
         assert count == len(first_ids)
         db.close()
 
@@ -135,9 +129,7 @@ class TestExtractDocument:
         # Rows were actually replaced (new primary keys), not just returned again.
         assert first_ids.isdisjoint(second_ids)
 
-        count = (
-            db.query(ExtractedField).filter(ExtractedField.document_id == document.id).count()
-        )
+        count = db.query(ExtractedField).filter(ExtractedField.document_id == document.id).count()
         assert count == len(second_ids)
         db.close()
 

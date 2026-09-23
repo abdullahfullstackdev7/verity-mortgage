@@ -41,19 +41,14 @@ def decide(applicant_id: str) -> DiscrepancyDecision:
     return DiscrepancyDecision(injected=True, direction=direction, variance_pct=variance_pct)
 
 
-def apply_income_discrepancy(
-    stated_income: float, applicant_id: str
-) -> tuple[float, DiscrepancyDecision]:
+def apply_income_discrepancy(stated_income: float, applicant_id: str) -> tuple[float, DiscrepancyDecision]:
     """Return the (possibly altered) annualized income to print on the pay
     stub, along with the decision that produced it."""
     decision = decide(applicant_id)
     if not decision.injected:
         return stated_income, decision
 
-    factor = (
-        1 + decision.variance_pct / 100
-        if decision.direction == "above"
-        else 1 - decision.variance_pct / 100
-    )
+    assert decision.variance_pct is not None  # guaranteed by decide() when injected=True
+    factor = 1 + decision.variance_pct / 100 if decision.direction == "above" else 1 - decision.variance_pct / 100
     document_income = round(stated_income * factor, 2)
     return document_income, decision

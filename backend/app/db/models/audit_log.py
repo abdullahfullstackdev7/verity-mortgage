@@ -26,4 +26,4 @@ class AuditLog(Base):
     rule_or_evidence: Mapped[str] = mapped_column(Text, nullable=False)
     created_at: Mapped[datetime] = mapped_column(server_default=func.now(), nullable=False)
 
-    case: Mapped["Case"] = relationship(back_populates="audit_entries")
+    case: Mapped[Case] = relationship(back_populates="audit_entries")

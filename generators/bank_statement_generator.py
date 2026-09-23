@@ -56,9 +56,7 @@ def build_context(applicant_id: str, stated_income: float, identity: Identity) -
     period_end = next_month - dt.timedelta(days=next_month.day)
 
     biweekly_gross = stated_income / 26
-    biweekly_net = biweekly_gross * (
-        1 - FEDERAL_TAX_RATE - STATE_TAX_RATE - SOCIAL_SECURITY_RATE - MEDICARE_RATE
-    )
+    biweekly_net = biweekly_gross * (1 - FEDERAL_TAX_RATE - STATE_TAX_RATE - SOCIAL_SECURITY_RATE - MEDICARE_RATE)
 
     beginning_balance = round(rng.uniform(1500, 9000), 2)
     balance = beginning_balance
@@ -75,7 +73,7 @@ def build_context(applicant_id: str, stated_income: float, identity: Identity) -
     events: list[tuple[int, str, float]] = []
     for day in deposit_days:
         events.append((day, "Payroll Direct Deposit", round(biweekly_net, 2)))
-    for day, (label, low, high) in zip(debit_days, rng.sample(_DEBIT_CATEGORIES, k=len(debit_days))):
+    for day, (label, low, high) in zip(debit_days, rng.sample(_DEBIT_CATEGORIES, k=len(debit_days)), strict=True):
         amount = -round(rng.uniform(low, high), 2)
         events.append((day, label, amount))
 

@@ -13,7 +13,7 @@ from backend.app.db.models.discrepancy import Discrepancy
 from backend.app.db.models.policy_chunk import PolicyChunk
 
 RESPONSE_INSTRUCTIONS = (
-    'Respond with ONLY a JSON object of the form '
+    "Respond with ONLY a JSON object of the form "
     '{"narrative": "<3-5 sentence factual summary>", '
     '"recommendation": "approve" | "refer" | "deny"}. '
     "No text outside the JSON object."
@@ -44,9 +44,7 @@ def _format_policy_chunks(chunks: list[PolicyChunk]) -> str:
     return "\n\n".join(chunk.chunk_text for chunk in chunks)
 
 
-def build_prompt(
-    applicant: Applicant, discrepancies: list[Discrepancy], policy_chunks: list[PolicyChunk]
-) -> str:
+def build_prompt(applicant: Applicant, discrepancies: list[Discrepancy], policy_chunks: list[PolicyChunk]) -> str:
     return (
         "You are drafting a factual underwriting summary for a loan case. "
         "Base the narrative only on the figures and discrepancies below; do "

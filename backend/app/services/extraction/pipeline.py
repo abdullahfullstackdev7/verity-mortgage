@@ -69,9 +69,7 @@ def extract_document(db: Session, document: Document, force: bool = False) -> li
 
     required = REQUIRED_FIELDS.get(document.doc_type, set())
     unresolved = {
-        name
-        for name in required
-        if name not in parsed or parsed[name].confidence < FIELD_CONFIDENCE_THRESHOLD
+        name for name in required if name not in parsed or parsed[name].confidence < FIELD_CONFIDENCE_THRESHOLD
     }
 
     if unresolved:

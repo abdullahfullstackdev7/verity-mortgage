@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 import types
-import uuid
 
 from backend.app.db.models.enums import DiscrepancySeverity
 from backend.app.services.summary.prompt import (

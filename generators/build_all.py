@@ -40,9 +40,7 @@ def _load_applicants(source: str, count: int | None) -> pd.DataFrame:
     filename = "applicants_sample_demo.parquet" if source == "demo" else "applicants.parquet"
     path = PROCESSED_DIR / filename
     if not path.exists():
-        raise FileNotFoundError(
-            f"{path} not found. Run scripts/clean_hmda.py first (Phase 1)."
-        )
+        raise FileNotFoundError(f"{path} not found. Run scripts/clean_hmda.py first (Phase 1).")
     df = pd.read_parquet(path)
     if count is not None:
         df = df.head(count)
@@ -68,9 +66,7 @@ def build_for_applicant(row: pd.Series, degrade_fraction: float) -> list[dict]:
     bank_statement_path = out_dir / "bank_statement.pdf"
     w2_path = out_dir / "w2.pdf"
 
-    document_income, decision = generate_paystub(
-        applicant_id, stated_income, identity, paystub_path
-    )
+    document_income, decision = generate_paystub(applicant_id, stated_income, identity, paystub_path)
     bank_statement_generator.generate(applicant_id, stated_income, identity, bank_statement_path)
     w2_generator.generate(stated_income, identity, w2_path)
 
@@ -109,9 +105,7 @@ def main() -> int:
         default="demo",
         help="Which processed dataset to draw applicants from (default: demo sample).",
     )
-    parser.add_argument(
-        "--count", type=int, default=None, help="Limit to the first N applicants."
-    )
+    parser.add_argument("--count", type=int, default=None, help="Limit to the first N applicants.")
     parser.add_argument(
         "--degrade-fraction",
         type=float,

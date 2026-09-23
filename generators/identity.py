@@ -54,7 +54,9 @@ def build_identity(applicant_id: str) -> Identity:
         employer_name=fake.company(),
         employer_ein=fake.numerify(text="##-#######"),
         employer_address=fake.address().replace("\n", ", "),
-        bank_name=f"{fake.last_name()} {fake.random_element(['National Bank', 'Federal Credit Union', 'Savings Bank'])}",
+        bank_name=(
+            f"{fake.last_name()} {fake.random_element(['National Bank', 'Federal Credit Union', 'Savings Bank'])}"
+        ),
         account_number_masked=account_number_masked,
         hire_date=fake.date_between(start_date="-8y", end_date="-1y").isoformat(),
     )

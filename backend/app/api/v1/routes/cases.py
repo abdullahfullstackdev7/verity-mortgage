@@ -25,7 +25,10 @@ from backend.app.services.case_state_machine import (
     TransitionNotAllowedError,
 )
 from backend.app.services.rules.engine import run_verification
-from backend.app.services.summary.service import SummaryGenerationError, generate_case_summary
+from backend.app.services.summary.service import (
+    SummaryGenerationError,
+    generate_case_summary,
+)
 
 router = APIRouter(prefix="/cases", tags=["cases"])
 
@@ -140,14 +143,9 @@ def list_audit_log(
     case_id: uuid.UUID,
     db: Session = Depends(get_db),
     _current_user: User = Depends(get_current_user),
-) -> list[AuditLogRead]:
+) -> list[AuditLog]:
     case = _get_case_or_404(db, case_id)
-    return (
-        db.query(AuditLog)
-        .filter(AuditLog.case_id == case.id)
-        .order_by(AuditLog.created_at)
-        .all()
-    )
+    return db.query(AuditLog).filter(AuditLog.case_id == case.id).order_by(AuditLog.created_at).all()
 
 
 @router.post(
@@ -155,9 +153,7 @@ def list_audit_log(
     response_model=list[DiscrepancyRead],
     dependencies=[Depends(require_roles(UserRole.LOAN_OFFICER, UserRole.UNDERWRITER, UserRole.ADMIN))],
 )
-def verify_case(
-    case_id: uuid.UUID, force: bool = False, db: Session = Depends(get_db)
-) -> list[DiscrepancyRead]:
+def verify_case(case_id: uuid.UUID, force: bool = False, db: Session = Depends(get_db)) -> list[Discrepancy]:
     case = _get_case_or_404(db, case_id)
     return run_verification(db, case, force=force)
 
@@ -167,7 +163,7 @@ def list_discrepancies(
     case_id: uuid.UUID,
     db: Session = Depends(get_db),
     _current_user: User = Depends(get_current_user),
-) -> list[DiscrepancyRead]:
+) -> list[Discrepancy]:
     case = _get_case_or_404(db, case_id)
     return db.query(Discrepancy).filter(Discrepancy.case_id == case.id).all()
 
@@ -177,9 +173,7 @@ def list_discrepancies(
     response_model=CaseSummaryRead,
     dependencies=[Depends(require_roles(UserRole.LOAN_OFFICER, UserRole.UNDERWRITER, UserRole.ADMIN))],
 )
-def generate_summary(
-    case_id: uuid.UUID, force: bool = False, db: Session = Depends(get_db)
-) -> CaseSummaryRead:
+def generate_summary(case_id: uuid.UUID, force: bool = False, db: Session = Depends(get_db)) -> CaseSummary:
     case = _get_case_or_404(db, case_id)
     try:
         return generate_case_summary(db, case, force=force)
@@ -192,13 +186,10 @@ def get_summary(
     case_id: uuid.UUID,
     db: Session = Depends(get_db),
     _current_user: User = Depends(get_current_user),
-) -> CaseSummaryRead:
+) -> CaseSummary:
     case = _get_case_or_404(db, case_id)
     summary = (
-        db.query(CaseSummary)
-        .filter(CaseSummary.case_id == case.id)
-        .order_by(CaseSummary.created_at.desc())
-        .first()
+        db.query(CaseSummary).filter(CaseSummary.case_id == case.id).order_by(CaseSummary.created_at.desc()).first()
     )
     if summary is None:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="No summary generated yet")

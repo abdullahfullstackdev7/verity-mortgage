@@ -3,6 +3,7 @@ from __future__ import annotations
 import uuid
 
 import pytest
+from conftest import requires_db
 from fastapi.testclient import TestClient
 
 from backend.app.db.base import SessionLocal
@@ -12,7 +13,6 @@ from backend.app.db.models.refresh_token import RefreshToken
 from backend.app.db.models.user import User
 from backend.app.main import app
 from backend.app.services import user_service
-from conftest import requires_db
 
 pytestmark = requires_db
 
@@ -90,9 +90,7 @@ class TestListApplicants:
         assert {"Alpha Applicant", "Beta Borrower"} <= names
 
     def test_search_filters_by_name(self, client, loan_officer, applicants):
-        resp = client.get(
-            "/api/v1/applicants", params={"search": "Alpha"}, headers=_auth(loan_officer["token"])
-        )
+        resp = client.get("/api/v1/applicants", params={"search": "Alpha"}, headers=_auth(loan_officer["token"]))
         assert resp.status_code == 200
         names = {item["name"] for item in resp.json()["items"]}
         assert "Alpha Applicant" in names

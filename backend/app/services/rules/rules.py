@@ -129,11 +129,7 @@ def check_employer_name(
     if similarity >= EMPLOYER_CLEAN_SIMILARITY:
         return None
 
-    severity = (
-        DiscrepancySeverity.MAJOR
-        if similarity < EMPLOYER_MAJOR_SIMILARITY
-        else DiscrepancySeverity.MINOR
-    )
+    severity = DiscrepancySeverity.MAJOR if similarity < EMPLOYER_MAJOR_SIMILARITY else DiscrepancySeverity.MINOR
     variance_pct = round((1 - similarity) * 100, 2)
 
     return RuleResult(

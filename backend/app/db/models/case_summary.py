@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import uuid
 from datetime import datetime
-from typing import TYPE_CHECKING, Optional
+from typing import TYPE_CHECKING
 
 from sqlalchemy import Enum as SAEnum
 from sqlalchemy import ForeignKey, Integer, String, Text, func
@@ -28,7 +28,7 @@ class CaseSummary(Base):
         SAEnum(Recommendation, name="recommendation", native_enum=True), nullable=False
     )
     generated_by_model: Mapped[str] = mapped_column(String(100), nullable=False)
-    token_count: Mapped[Optional[int]] = mapped_column(Integer, nullable=True)
+    token_count: Mapped[int | None] = mapped_column(Integer, nullable=True)
     # SHA-256 of the case's discrepancy set at generation time. Lets the
     # service detect "the underlying discrepancies changed" (per the Phase 7
     # plan's caching rule) without re-running the rules engine or comparing
@@ -36,4 +36,4 @@ class CaseSummary(Base):
     discrepancy_fingerprint: Mapped[str] = mapped_column(String(64), nullable=False)
     created_at: Mapped[datetime] = mapped_column(server_default=func.now(), nullable=False)
 
-    case: Mapped["Case"] = relationship(back_populates="summaries")
+    case: Mapped[Case] = relationship(back_populates="summaries")

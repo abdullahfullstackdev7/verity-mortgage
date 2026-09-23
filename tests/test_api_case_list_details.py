@@ -3,6 +3,7 @@ from __future__ import annotations
 import uuid
 
 import pytest
+from conftest import requires_db
 from fastapi.testclient import TestClient
 
 from backend.app.db.base import SessionLocal
@@ -14,7 +15,6 @@ from backend.app.db.models.refresh_token import RefreshToken
 from backend.app.db.models.user import User
 from backend.app.main import app
 from backend.app.services import user_service
-from conftest import requires_db
 
 pytestmark = requires_db
 
@@ -101,9 +101,7 @@ def case_with_discrepancies(loan_officer):
 
 
 class TestEnrichedCaseList:
-    def test_list_includes_applicant_and_discrepancy_counts(
-        self, client, loan_officer, case_with_discrepancies
-    ):
+    def test_list_includes_applicant_and_discrepancy_counts(self, client, loan_officer, case_with_discrepancies):
         resp = client.get(
             "/api/v1/cases",
             params={"status": "under_review"},

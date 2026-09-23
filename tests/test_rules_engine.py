@@ -3,6 +3,7 @@ from __future__ import annotations
 import uuid
 
 import pytest
+from conftest import requires_db
 
 from backend.app.db.base import SessionLocal
 from backend.app.db.models.applicant import Applicant
@@ -14,7 +15,6 @@ from backend.app.db.models.enums import CaseStatus, DocumentType, OcrStatus
 from backend.app.db.models.extracted_field import ExtractedField
 from backend.app.services.extraction.embedding import embed_text
 from backend.app.services.rules.engine import run_verification
-from conftest import requires_db
 
 pytestmark = requires_db
 
@@ -100,12 +100,10 @@ def applicant_and_case(db_session):
     # go first, before the documents they point at can be deleted.
     db.query(Discrepancy).filter(Discrepancy.case_id == case_id).delete()
     if document_ids:
-        db.query(ExtractedField).filter(ExtractedField.document_id.in_(document_ids)).delete(
+        db.query(ExtractedField).filter(ExtractedField.document_id.in_(document_ids)).delete(synchronize_session=False)
+        db.query(DocumentEmbedding).filter(DocumentEmbedding.document_id.in_(document_ids)).delete(
             synchronize_session=False
         )
-        db.query(DocumentEmbedding).filter(
-            DocumentEmbedding.document_id.in_(document_ids)
-        ).delete(synchronize_session=False)
         db.query(Document).filter(Document.id.in_(document_ids)).delete(synchronize_session=False)
     db.query(Case).filter(Case.id == case_id).delete()
     db.query(Applicant).filter(Applicant.id == applicant_id).delete()
@@ -115,7 +113,7 @@ def applicant_and_case(db_session):
 
 class TestRunVerificationCleanCase:
     def test_matching_documents_produce_no_discrepancies(self, db_session, applicant_and_case):
-        applicant, case = applicant_and_case
+        _applicant, case = applicant_and_case
         biweekly_gross = str(round(STATED_INCOME / 26, 2))
 
         _add_document_with_fields(
@@ -147,7 +145,7 @@ class TestRunVerificationCleanCase:
 
 class TestRunVerificationMismatches:
     def test_income_15_percent_below_stated_flags_income_paystub(self, db_session, applicant_and_case):
-        applicant, case = applicant_and_case
+        _applicant, case = applicant_and_case
         low_annual = STATED_INCOME * 0.85
         biweekly_gross = str(round(low_annual / 26, 2))
 
@@ -166,7 +164,7 @@ class TestRunVerificationMismatches:
         assert by_field["income_paystub"].severity.value == "minor"
 
     def test_income_40_percent_below_stated_is_major(self, db_session, applicant_and_case):
-        applicant, case = applicant_and_case
+        _applicant, case = applicant_and_case
         low_annual = STATED_INCOME * 0.60
         biweekly_gross = str(round(low_annual / 26, 2))
 
@@ -184,7 +182,7 @@ class TestRunVerificationMismatches:
         assert by_field["income_paystub"].severity.value == "major"
 
     def test_mismatched_employer_name_is_flagged(self, db_session, applicant_and_case):
-        applicant, case = applicant_and_case
+        _applicant, case = applicant_and_case
         _add_document_with_fields(
             db_session,
             case.id,
@@ -200,7 +198,7 @@ class TestRunVerificationMismatches:
         assert by_field["employer_name_w2"].document_value == "Totally Unrelated Company"
 
     def test_source_document_id_is_recorded(self, db_session, applicant_and_case):
-        applicant, case = applicant_and_case
+        _applicant, case = applicant_and_case
         low_annual = STATED_INCOME * 0.60
         document = _add_document_with_fields(
             db_session,
@@ -218,7 +216,7 @@ class TestRunVerificationMismatches:
 
 class TestRunVerificationIdempotency:
     def test_rerun_without_force_returns_same_rows(self, db_session, applicant_and_case):
-        applicant, case = applicant_and_case
+        _applicant, case = applicant_and_case
         low_annual = STATED_INCOME * 0.60
         _add_document_with_fields(
             db_session,
@@ -234,7 +232,7 @@ class TestRunVerificationIdempotency:
         assert {d.id for d in first} == {d.id for d in second}
 
     def test_force_rerun_replaces_rows(self, db_session, applicant_and_case):
-        applicant, case = applicant_and_case
+        _applicant, case = applicant_and_case
         low_annual = STATED_INCOME * 0.60
         _add_document_with_fields(
             db_session,

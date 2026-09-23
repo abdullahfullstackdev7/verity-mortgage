@@ -114,7 +114,9 @@ def _parse_income_thousands(value: object) -> float | None:
     if _is_null_token(value):
         return None
     try:
-        thousands = float(value)
+        # `value` is a raw pandas cell (str/int/float at runtime); all of
+        # those support float(), but the DataFrame's dtype is untyped here.
+        thousands = float(value)  # type: ignore[arg-type]
     except ValueError:
         return None
     if thousands < 0:
@@ -126,7 +128,7 @@ def _parse_numeric(value: object) -> float | None:
     if _is_null_token(value):
         return None
     try:
-        num = float(value)
+        num = float(value)  # type: ignore[arg-type]  # raw pandas cell, see _parse_income_thousands
     except ValueError:
         return None
     return num if num >= 0 else None
@@ -139,9 +141,7 @@ def load_raw_files(paths: list[Path]) -> pd.DataFrame:
         df["_source_file"] = path.name
         frames.append(df)
     if not frames:
-        raise FileNotFoundError(
-            f"No raw HMDA files provided or found in {RAW_HMDA_DIR}"
-        )
+        raise FileNotFoundError(f"No raw HMDA files provided or found in {RAW_HMDA_DIR}")
     return pd.concat(frames, ignore_index=True)
 
 
@@ -167,14 +167,14 @@ def clean(df: pd.DataFrame) -> pd.DataFrame:
     for col in ("derived_loan_product_type", "loan_purpose", "occupancy_type"):
         out[col] = df[col] if col in df.columns else None
 
-    source_file = df["_source_file"] if "_source_file" in df.columns else "unknown"
-    out["hmda_source_id"] = [
-        f"{sf}:{idx}" for sf, idx in zip(source_file, df.index)
-    ]
-    out["applicant_id"] = [
-        str(uuid.uuid5(APPLICANT_ID_NAMESPACE, source_id))
-        for source_id in out["hmda_source_id"]
-    ]
+    if "_source_file" in df.columns:
+        source_file = df["_source_file"]
+    else:
+        # A bare string here would zip over its individual characters
+        # instead of repeating "unknown" once per row.
+        source_file = pd.Series(["unknown"] * len(df), index=df.index)
+    out["hmda_source_id"] = [f"{sf}:{idx}" for sf, idx in zip(source_file, df.index, strict=True)]
+    out["applicant_id"] = [str(uuid.uuid5(APPLICANT_ID_NAMESPACE, source_id)) for source_id in out["hmda_source_id"]]
 
     required_after_parse = [
         "income",
@@ -219,18 +219,13 @@ def validate_schema(df: pd.DataFrame, sample_size: int = 50) -> None:
         raise ValueError(f"Schema validation failed on {len(errors)} row(s): {errors[0]}")
 
 
-def stratified_demo_sample(
-    df: pd.DataFrame, sample_size: int, seed: int = 42
-) -> pd.DataFrame:
+def stratified_demo_sample(df: pd.DataFrame, sample_size: int, seed: int = 42) -> pd.DataFrame:
     """Random stratified sample across outcome labels for the seeded demo."""
     if len(df) <= sample_size:
         return df.copy()
 
     frac = sample_size / len(df)
-    parts = [
-        group.sample(frac=frac, random_state=seed)
-        for _, group in df.groupby("outcome")
-    ]
+    parts = [group.sample(frac=frac, random_state=seed) for _, group in df.groupby("outcome")]
     sampled = pd.concat(parts, ignore_index=True) if parts else df.iloc[0:0]
     return sampled.reset_index(drop=True)
 

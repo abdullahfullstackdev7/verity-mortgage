@@ -1,11 +1,14 @@
 from __future__ import annotations
 
 import pytest
+from conftest import requires_db
 
 from backend.app.db.base import SessionLocal
 from backend.app.db.models.policy_chunk import PolicyChunk
-from backend.app.services.policy.ingest import ingest_policy_guidelines, split_into_chunks
-from conftest import requires_db
+from backend.app.services.policy.ingest import (
+    ingest_policy_guidelines,
+    split_into_chunks,
+)
 
 SAMPLE_MD = """# Title
 
@@ -52,17 +55,11 @@ class TestIngestPolicyGuidelines:
         try:
             count = ingest_policy_guidelines(db, path=fixture_md_path)
             assert count == 2
-            rows = (
-                db.query(PolicyChunk)
-                .filter(PolicyChunk.source_doc == fixture_md_path.name)
-                .all()
-            )
+            rows = db.query(PolicyChunk).filter(PolicyChunk.source_doc == fixture_md_path.name).all()
             assert len(rows) == 2
             assert len(rows[0].embedding) == 384
         finally:
-            db.query(PolicyChunk).filter(
-                PolicyChunk.source_doc == fixture_md_path.name
-            ).delete()
+            db.query(PolicyChunk).filter(PolicyChunk.source_doc == fixture_md_path.name).delete()
             db.commit()
             db.close()
 
@@ -70,25 +67,15 @@ class TestIngestPolicyGuidelines:
         db = SessionLocal()
         try:
             ingest_policy_guidelines(db, path=fixture_md_path)
-            first_ids = {
-                row.id
-                for row in db.query(PolicyChunk).filter(
-                    PolicyChunk.source_doc == fixture_md_path.name
-                )
-            }
+            first_ids = {row.id for row in db.query(PolicyChunk).filter(PolicyChunk.source_doc == fixture_md_path.name)}
 
             ingest_policy_guidelines(db, path=fixture_md_path)
             second_ids = {
-                row.id
-                for row in db.query(PolicyChunk).filter(
-                    PolicyChunk.source_doc == fixture_md_path.name
-                )
+                row.id for row in db.query(PolicyChunk).filter(PolicyChunk.source_doc == fixture_md_path.name)
             }
             assert first_ids == second_ids
         finally:
-            db.query(PolicyChunk).filter(
-                PolicyChunk.source_doc == fixture_md_path.name
-            ).delete()
+            db.query(PolicyChunk).filter(PolicyChunk.source_doc == fixture_md_path.name).delete()
             db.commit()
             db.close()
 
@@ -96,24 +83,14 @@ class TestIngestPolicyGuidelines:
         db = SessionLocal()
         try:
             ingest_policy_guidelines(db, path=fixture_md_path)
-            first_ids = {
-                row.id
-                for row in db.query(PolicyChunk).filter(
-                    PolicyChunk.source_doc == fixture_md_path.name
-                )
-            }
+            first_ids = {row.id for row in db.query(PolicyChunk).filter(PolicyChunk.source_doc == fixture_md_path.name)}
 
             ingest_policy_guidelines(db, path=fixture_md_path, force=True)
             second_ids = {
-                row.id
-                for row in db.query(PolicyChunk).filter(
-                    PolicyChunk.source_doc == fixture_md_path.name
-                )
+                row.id for row in db.query(PolicyChunk).filter(PolicyChunk.source_doc == fixture_md_path.name)
             }
             assert first_ids.isdisjoint(second_ids)
         finally:
-            db.query(PolicyChunk).filter(
-                PolicyChunk.source_doc == fixture_md_path.name
-            ).delete()
+            db.query(PolicyChunk).filter(PolicyChunk.source_doc == fixture_md_path.name).delete()
             db.commit()
             db.close()

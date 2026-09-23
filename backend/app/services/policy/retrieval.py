@@ -13,16 +13,9 @@ from backend.app.services.extraction.embedding import embed_text
 DEFAULT_TOP_K = 2
 
 
-def retrieve_relevant_chunks(
-    db: Session, query_text: str, top_k: int = DEFAULT_TOP_K
-) -> list[PolicyChunk]:
+def retrieve_relevant_chunks(db: Session, query_text: str, top_k: int = DEFAULT_TOP_K) -> list[PolicyChunk]:
     if not query_text.strip():
         return []
 
     query_vector = embed_text(query_text)
-    return (
-        db.query(PolicyChunk)
-        .order_by(PolicyChunk.embedding.cosine_distance(query_vector))
-        .limit(top_k)
-        .all()
-    )
+    return db.query(PolicyChunk).order_by(PolicyChunk.embedding.cosine_distance(query_vector)).limit(top_k).all()

@@ -1,6 +1,6 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useState } from 'react'
 
-import { ApiError, getMe, login as apiLogin, logout as apiLogout, tokenStorage } from './api'
+import { ApiError, getMe, login as apiLogin, logout as apiLogout } from './api'
 import type { User } from './types'
 
 interface AuthContextValue {
@@ -20,10 +20,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     let cancelled = false
 
     async function restoreSession() {
-      if (!tokenStorage.getAccessToken() && !tokenStorage.getRefreshToken()) {
-        if (!cancelled) setStatus('unauthenticated')
-        return
-      }
+      // No token to check client-side -- the session lives in an httpOnly
+      // cookie the browser sends automatically, so just ask the API
+      // whether it recognizes us.
       try {
         const me = await getMe()
         if (!cancelled) {
@@ -31,7 +30,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           setStatus('authenticated')
         }
       } catch {
-        tokenStorage.clear()
         if (!cancelled) setStatus('unauthenticated')
       }
     }
@@ -43,29 +41,19 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }, [])
 
   const login = useCallback(async (email: string, password: string) => {
-    const tokens = await apiLogin(email, password)
-    tokenStorage.setTokens(tokens.access_token, tokens.refresh_token)
-    try {
-      const me = await getMe()
-      setUser(me)
-      setStatus('authenticated')
-    } catch (error) {
-      tokenStorage.clear()
-      throw error
-    }
+    await apiLogin(email, password)
+    const me = await getMe()
+    setUser(me)
+    setStatus('authenticated')
   }, [])
 
   const logout = useCallback(async () => {
-    const refreshToken = tokenStorage.getRefreshToken()
-    tokenStorage.clear()
     setUser(null)
     setStatus('unauthenticated')
-    if (refreshToken) {
-      try {
-        await apiLogout(refreshToken)
-      } catch {
-        // best-effort server-side revocation; the client already cleared its tokens
-      }
+    try {
+      await apiLogout()
+    } catch {
+      // best-effort server-side revocation; the client already cleared its session
     }
   }, [])
 

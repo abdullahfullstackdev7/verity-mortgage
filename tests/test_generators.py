@@ -54,11 +54,7 @@ class TestDiscrepancyDecision:
 
     def test_apply_income_discrepancy_matches_direction(self):
         # Find an applicant with an injected discrepancy deterministically.
-        aid = next(
-            a
-            for a in (f"synthetic-applicant-{i}" for i in range(200))
-            if discrepancy.decide(a).injected
-        )
+        aid = next(a for a in (f"synthetic-applicant-{i}" for i in range(200)) if discrepancy.decide(a).injected)
         stated_income = 90_000.0
         document_income, decision = discrepancy.apply_income_discrepancy(stated_income, aid)
         assert decision.injected
@@ -68,11 +64,7 @@ class TestDiscrepancyDecision:
             assert document_income < stated_income
 
     def test_apply_income_discrepancy_no_injection_returns_stated_value(self):
-        aid = next(
-            a
-            for a in (f"synthetic-applicant-{i}" for i in range(200))
-            if not discrepancy.decide(a).injected
-        )
+        aid = next(a for a in (f"synthetic-applicant-{i}" for i in range(200)) if not discrepancy.decide(a).injected)
         stated_income = 90_000.0
         document_income, decision = discrepancy.apply_income_discrepancy(stated_income, aid)
         assert not decision.injected
@@ -82,9 +74,7 @@ class TestDiscrepancyDecision:
 class TestPaystubContext:
     def test_net_pay_equals_gross_minus_deductions(self):
         identity = build_identity(APPLICANT_A)
-        context, _document_income, _decision = build_paystub_context(
-            APPLICANT_A, 90_000.0, identity
-        )
+        context, _document_income, _decision = build_paystub_context(APPLICANT_A, 90_000.0, identity)
         expected_net = round(
             context["gross_pay"]
             - context["federal_tax"]
@@ -97,9 +87,7 @@ class TestPaystubContext:
 
     def test_gross_pay_times_periods_matches_document_income(self):
         identity = build_identity(APPLICANT_A)
-        context, document_income, _decision = build_paystub_context(
-            APPLICANT_A, 90_000.0, identity
-        )
+        context, document_income, _decision = build_paystub_context(APPLICANT_A, 90_000.0, identity)
         assert round(context["gross_pay"] * 26, 2) == pytest.approx(document_income, abs=0.5)
 
 

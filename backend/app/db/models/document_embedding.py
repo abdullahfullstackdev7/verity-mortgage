@@ -26,4 +26,4 @@ class DocumentEmbedding(Base):
     value_text: Mapped[str] = mapped_column(Text, nullable=False)
     embedding: Mapped[list[float]] = mapped_column(Vector(EMBEDDING_DIM), nullable=False)
 
-    document: Mapped["Document"] = relationship(back_populates="embeddings")
+    document: Mapped[Document] = relationship(back_populates="embeddings")

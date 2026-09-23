@@ -16,25 +16,13 @@ import type {
 export const API_BASE_URL =
   (import.meta.env.VITE_API_BASE_URL as string | undefined) ?? 'http://localhost:8000/api/v1'
 
-// Token storage: plain localStorage for now. The plan's preference for
-// httpOnly cookies requires the backend to set them on login/refresh
-// (Set-Cookie), which is Phase 11's hardening work, not built yet -- so
-// this is the pragmatic SPA-JWT approach until that lands.
-const ACCESS_TOKEN_KEY = 'verity.access_token'
-const REFRESH_TOKEN_KEY = 'verity.refresh_token'
-
-export const tokenStorage = {
-  getAccessToken: () => localStorage.getItem(ACCESS_TOKEN_KEY),
-  getRefreshToken: () => localStorage.getItem(REFRESH_TOKEN_KEY),
-  setTokens(accessToken: string, refreshToken: string) {
-    localStorage.setItem(ACCESS_TOKEN_KEY, accessToken)
-    localStorage.setItem(REFRESH_TOKEN_KEY, refreshToken)
-  },
-  clear() {
-    localStorage.removeItem(ACCESS_TOKEN_KEY)
-    localStorage.removeItem(REFRESH_TOKEN_KEY)
-  },
-}
+// Session storage: httpOnly cookies, set by the backend on login/refresh
+// (see backend/app/core/cookies.py). The app never reads or stores a
+// token in JS-accessible memory or localStorage -- every request just
+// sends `credentials: 'include'` and lets the browser attach the cookie,
+// so an XSS payload on this page has nothing to steal. The backend also
+// still returns the tokens in the JSON body for non-browser/API clients;
+// this app deliberately ignores that field.
 
 export class ApiError extends Error {
   status: number
@@ -54,21 +42,11 @@ export class ApiError extends Error {
 let refreshPromise: Promise<boolean> | null = null
 
 async function refreshTokens(): Promise<boolean> {
-  const refreshToken = tokenStorage.getRefreshToken()
-  if (!refreshToken) return false
-
   const response = await fetch(`${API_BASE_URL}/auth/refresh`, {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ refresh_token: refreshToken }),
+    credentials: 'include',
   })
-  if (!response.ok) {
-    tokenStorage.clear()
-    return false
-  }
-  const body = (await response.json()) as { access_token: string; refresh_token: string }
-  tokenStorage.setTokens(body.access_token, body.refresh_token)
-  return true
+  return response.ok
 }
 
 interface RequestOptions {
@@ -92,21 +70,17 @@ async function request<T>(path: string, options: RequestOptions = {}): Promise<T
     const headers: Record<string, string> = {}
     if (options.json !== undefined) headers['Content-Type'] = 'application/json'
 
-    if (!options.skipAuth) {
-      const token = tokenStorage.getAccessToken()
-      if (token) headers.Authorization = `Bearer ${token}`
-    }
-
     return fetch(url.toString(), {
       method: options.method ?? 'GET',
       headers,
+      credentials: 'include',
       body: options.formData ?? (options.json !== undefined ? JSON.stringify(options.json) : undefined),
     })
   }
 
   let response = await doFetch()
 
-  if (response.status === 401 && !options.skipAuth && tokenStorage.getRefreshToken()) {
+  if (response.status === 401 && !options.skipAuth) {
     refreshPromise ??= refreshTokens().finally(() => {
       refreshPromise = null
     })
@@ -136,18 +110,17 @@ async function request<T>(path: string, options: RequestOptions = {}): Promise<T
 // --- Auth ---
 
 export function login(email: string, password: string) {
+  // The session actually lives in the httpOnly cookie the backend just
+  // set on this response; the JSON body's tokens (kept for non-browser
+  // API clients) are intentionally never read here.
   return request<{ access_token: string; refresh_token: string; token_type: string }>(
     '/auth/login',
     { method: 'POST', json: { email, password }, skipAuth: true },
   )
 }
 
-export function logout(refreshToken: string) {
-  return request<void>('/auth/logout', {
-    method: 'POST',
-    json: { refresh_token: refreshToken },
-    skipAuth: true,
-  })
+export function logout() {
+  return request<void>('/auth/logout', { method: 'POST', skipAuth: true })
 }
 
 export function getMe() {
@@ -253,11 +226,9 @@ export function listExtractedFields(caseId: string, documentId: string) {
 }
 
 export async function fetchDocumentFileUrl(caseId: string, documentId: string): Promise<string> {
-  const token = tokenStorage.getAccessToken()
-  const response = await fetch(
-    `${API_BASE_URL}/cases/${caseId}/documents/${documentId}/file`,
-    { headers: token ? { Authorization: `Bearer ${token}` } : {} },
-  )
+  const response = await fetch(`${API_BASE_URL}/cases/${caseId}/documents/${documentId}/file`, {
+    credentials: 'include',
+  })
   if (!response.ok) throw new ApiError(response.status, undefined, 'Failed to load document')
   const blob = await response.blob()
   return URL.createObjectURL(blob)

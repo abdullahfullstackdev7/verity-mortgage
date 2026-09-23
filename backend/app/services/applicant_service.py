@@ -31,11 +31,5 @@ def list_applicants(
         count_query = count_query.where(condition)
 
     total = db.execute(count_query).scalar_one()
-    items = (
-        db.execute(
-            query.order_by(Applicant.name).offset((page - 1) * size).limit(size)
-        )
-        .scalars()
-        .all()
-    )
+    items = db.execute(query.order_by(Applicant.name).offset((page - 1) * size).limit(size)).scalars().all()
     return list(items), total

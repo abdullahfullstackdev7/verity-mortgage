@@ -12,8 +12,8 @@ confidence.
 from __future__ import annotations
 
 import re
+from collections.abc import Callable
 from dataclasses import dataclass
-from typing import Callable
 
 from backend.app.db.models.enums import DocumentType
 from backend.app.services.extraction.ocr import OcrPage, Token, group_rows, row_text
@@ -70,9 +70,7 @@ def parse_paystub(page: OcrPage) -> dict[str, ExtractedValue]:
         value_row = rows[header_idx + 1]
         left, _right = split_left_right(value_row, page.width)
         if left:
-            result["employer_name"] = ExtractedValue(
-                tokens_text(left), tokens_confidence(left), row_text(value_row)
-            )
+            result["employer_name"] = ExtractedValue(tokens_text(left), tokens_confidence(left), row_text(value_row))
 
     gross_idx = find_row_index(rows, lambda r: "gross" in row_text(r).lower())
     if gross_idx is not None:
@@ -100,7 +98,9 @@ def parse_bank_statement(page: OcrPage) -> dict[str, ExtractedValue]:
         amounts = find_money_values(text)
         confidence = tokens_confidence(rows[summary_idx])
         for label, amount in zip(
-            ["beginning_balance", "total_deposits", "total_withdrawals", "ending_balance"], amounts
+            ["beginning_balance", "total_deposits", "total_withdrawals", "ending_balance"],
+            amounts,
+            strict=True,
         ):
             result[label] = ExtractedValue(f"{amount:.2f}", confidence, text)
 
@@ -133,9 +133,7 @@ def parse_w2(page: OcrPage) -> dict[str, ExtractedValue]:
         value_row = rows[header_idx + 1]
         left, _right = split_left_right(value_row, page.width)
         if left:
-            result["employer_name"] = ExtractedValue(
-                tokens_text(left), tokens_confidence(left), row_text(value_row)
-            )
+            result["employer_name"] = ExtractedValue(tokens_text(left), tokens_confidence(left), row_text(value_row))
 
     ein_pattern = re.compile(r"EIN:?\s*([\d\-]+)", re.IGNORECASE)
     ein_idx = find_row_index(rows, lambda r: ein_pattern.search(row_text(r)) is not None)
@@ -143,20 +141,14 @@ def parse_w2(page: OcrPage) -> dict[str, ExtractedValue]:
         text = row_text(rows[ein_idx])
         match = ein_pattern.search(text)
         if match:
-            result["employer_ein"] = ExtractedValue(
-                match.group(1), tokens_confidence(rows[ein_idx]), text
-            )
+            result["employer_ein"] = ExtractedValue(match.group(1), tokens_confidence(rows[ein_idx]), text)
 
-    box1_idx = find_row_index(
-        rows, lambda r: "wages, tips, other compensation" in row_text(r).lower()
-    )
+    box1_idx = find_row_index(rows, lambda r: "wages, tips, other compensation" in row_text(r).lower())
     if box1_idx is not None:
         text = row_text(rows[box1_idx])
         amounts = find_money_values(text)
         if amounts:
-            result["box1_wages"] = ExtractedValue(
-                f"{amounts[0]:.2f}", tokens_confidence(rows[box1_idx]), text
-            )
+            result["box1_wages"] = ExtractedValue(f"{amounts[0]:.2f}", tokens_confidence(rows[box1_idx]), text)
 
     return result
 

@@ -46,13 +46,7 @@ def list_cases(
         count_query = count_query.where(Case.status == status)
 
     total = db.execute(count_query).scalar_one()
-    items = (
-        db.execute(
-            query.order_by(Case.created_at.desc()).offset((page - 1) * size).limit(size)
-        )
-        .scalars()
-        .all()
-    )
+    items = db.execute(query.order_by(Case.created_at.desc()).offset((page - 1) * size).limit(size)).scalars().all()
     return list(items), total
 
 
@@ -74,23 +68,16 @@ def list_cases_with_details(
     applicant_ids = {c.applicant_id for c in cases}
     underwriter_ids = {c.assigned_underwriter_id for c in cases if c.assigned_underwriter_id}
 
-    applicants_by_id = {
-        a.id: a
-        for a in db.execute(select(Applicant).where(Applicant.id.in_(applicant_ids))).scalars()
-    }
+    applicants_by_id = {a.id: a for a in db.execute(select(Applicant).where(Applicant.id.in_(applicant_ids))).scalars()}
 
     underwriter_emails_by_id: dict[uuid.UUID, str] = {}
     if underwriter_ids:
         underwriter_emails_by_id = dict(
-            db.execute(
-                select(User.id, User.email).where(User.id.in_(underwriter_ids))
-            ).all()
+            db.execute(select(User.id, User.email).where(User.id.in_(underwriter_ids))).all()  # type: ignore[arg-type]
         )
 
     discrepancy_counts: dict[uuid.UUID, tuple[int, int]] = {}
-    major_count_expr = func.sum(
-        sql_case((Discrepancy.severity == DiscrepancySeverity.MAJOR, 1), else_=0)
-    )
+    major_count_expr = func.sum(sql_case((Discrepancy.severity == DiscrepancySeverity.MAJOR, 1), else_=0))
     rows = db.execute(
         select(Discrepancy.case_id, func.count(), major_count_expr)
         .where(Discrepancy.case_id.in_(case_ids))
@@ -113,9 +100,7 @@ def list_cases_with_details(
                 discrepancy_count=total_count,
                 major_discrepancy_count=major_count,
                 assigned_underwriter_email=(
-                    underwriter_emails_by_id.get(c.assigned_underwriter_id)
-                    if c.assigned_underwriter_id
-                    else None
+                    underwriter_emails_by_id.get(c.assigned_underwriter_id) if c.assigned_underwriter_id else None
                 ),
                 created_at=c.created_at,
                 updated_at=c.updated_at,

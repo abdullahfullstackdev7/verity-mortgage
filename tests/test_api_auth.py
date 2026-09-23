@@ -3,6 +3,7 @@ from __future__ import annotations
 import uuid
 
 import pytest
+from conftest import requires_db
 from fastapi.testclient import TestClient
 
 from backend.app.db.base import SessionLocal
@@ -11,7 +12,6 @@ from backend.app.db.models.refresh_token import RefreshToken
 from backend.app.db.models.user import User
 from backend.app.main import app
 from backend.app.services import user_service
-from conftest import requires_db
 
 pytestmark = requires_db
 
@@ -115,9 +115,7 @@ class TestCurrentUser:
         )
         access_token = login_resp.json()["access_token"]
 
-        resp = client.get(
-            "/api/v1/users/me", headers={"Authorization": f"Bearer {access_token}"}
-        )
+        resp = client.get("/api/v1/users/me", headers={"Authorization": f"Bearer {access_token}"})
         assert resp.status_code == 200
         assert resp.json()["email"] == admin_user["email"]
         assert resp.json()["role"] == "admin"
@@ -132,9 +130,7 @@ class TestUserCreationRbac:
         officer_id = officer.id
         db.close()
 
-        login_resp = client.post(
-            "/api/v1/auth/login", json={"email": email, "password": password}
-        )
+        login_resp = client.post("/api/v1/auth/login", json={"email": email, "password": password})
         access_token = login_resp.json()["access_token"]
 
         resp = client.post(

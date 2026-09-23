@@ -1,12 +1,12 @@
 from __future__ import annotations
 
 import pytest
+from conftest import requires_db
 
 from backend.app.db.base import SessionLocal
 from backend.app.db.models.policy_chunk import PolicyChunk
 from backend.app.services.extraction.embedding import embed_text
 from backend.app.services.policy.retrieval import retrieve_relevant_chunks
-from conftest import requires_db
 
 pytestmark = requires_db
 
@@ -18,15 +18,13 @@ def sample_chunks():
     db = SessionLocal()
     texts = {
         "income": "Income verification compares pay stub gross pay against stated income with a tolerance band.",
-        "employer": "Employer identity is checked using semantic similarity between the stated and extracted employer name.",
+        "employer": (
+            "Employer identity is checked using semantic similarity between the stated and extracted employer name."
+        ),
         "cooking": "This section is entirely about baking sourdough bread and has nothing to do with underwriting.",
     }
     for key, text in texts.items():
-        db.add(
-            PolicyChunk(
-                source_doc=SOURCE_DOC, chunk_text=f"## {key}\n{text}", embedding=embed_text(text)
-            )
-        )
+        db.add(PolicyChunk(source_doc=SOURCE_DOC, chunk_text=f"## {key}\n{text}", embedding=embed_text(text)))
     db.commit()
 
     yield

@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import uuid
-from typing import TYPE_CHECKING, Optional
+from typing import TYPE_CHECKING
 
 from sqlalchemy import Enum as SAEnum
 from sqlalchemy import ForeignKey, Numeric, String
@@ -30,9 +30,9 @@ class Discrepancy(Base):
     severity: Mapped[DiscrepancySeverity] = mapped_column(
         SAEnum(DiscrepancySeverity, name="discrepancy_severity", native_enum=True), nullable=False
     )
-    source_document_id: Mapped[Optional[uuid.UUID]] = mapped_column(
+    source_document_id: Mapped[uuid.UUID | None] = mapped_column(
         PG_UUID(as_uuid=True), ForeignKey("documents.id"), nullable=True
     )
 
-    case: Mapped["Case"] = relationship(back_populates="discrepancies")
-    source_document: Mapped[Optional["Document"]] = relationship()
+    case: Mapped[Case] = relationship(back_populates="discrepancies")
+    source_document: Mapped[Document | None] = relationship()

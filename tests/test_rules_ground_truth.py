@@ -10,7 +10,7 @@ from __future__ import annotations
 
 import uuid
 
-import pytest
+from conftest import requires_db
 
 from backend.app.db.base import SessionLocal
 from backend.app.db.models.applicant import Applicant
@@ -22,7 +22,6 @@ from backend.app.db.models.enums import CaseStatus, DocumentType, OcrStatus
 from backend.app.db.models.extracted_field import ExtractedField
 from backend.app.services.extraction.pipeline import extract_document
 from backend.app.services.rules.engine import run_verification
-from conftest import requires_db
 from generators import discrepancy
 from generators.identity import build_identity
 from generators.paystub_generator import generate as generate_paystub
@@ -66,7 +65,7 @@ def _build_case_with_paystub(tmp_path, applicant_id_str: str):
     # derived from it just for a stable primary key here.
     identity = build_identity(applicant_id_str)
     pdf_path = tmp_path / "paystub.pdf"
-    document_income, decision = generate_paystub(applicant_id_str, STATED_INCOME, identity, pdf_path)
+    _document_income, decision = generate_paystub(applicant_id_str, STATED_INCOME, identity, pdf_path)
 
     document = Document(
         case_id=case.id,
@@ -86,9 +85,7 @@ def _cleanup(ids: dict):
     db = SessionLocal()
     db.query(Discrepancy).filter(Discrepancy.case_id == ids["case_id"]).delete()
     db.query(ExtractedField).filter(ExtractedField.document_id == ids["document_id"]).delete()
-    db.query(DocumentEmbedding).filter(
-        DocumentEmbedding.document_id == ids["document_id"]
-    ).delete()
+    db.query(DocumentEmbedding).filter(DocumentEmbedding.document_id == ids["document_id"]).delete()
     db.query(Document).filter(Document.id == ids["document_id"]).delete()
     db.query(Case).filter(Case.id == ids["case_id"]).delete()
     db.query(Applicant).filter(Applicant.id == ids["applicant_id"]).delete()

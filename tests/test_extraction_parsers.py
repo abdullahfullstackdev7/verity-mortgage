@@ -61,9 +61,7 @@ class TestParsePaystub:
         assert result["pay_frequency"].value == "Biweekly"
 
     def test_missing_gross_row_leaves_field_absent(self):
-        page = make_page(
-            [[make_token("Employer", 1.0, 100, 100), make_token("Employee", 1.0, 800, 100)]]
-        )
+        page = make_page([[make_token("Employer", 1.0, 100, 100), make_token("Employee", 1.0, 800, 100)]])
         result = parse_paystub(page)
         assert "gross_pay_current" not in result
 

@@ -3,6 +3,7 @@ from __future__ import annotations
 import uuid
 
 import pytest
+from conftest import requires_db
 from fastapi.testclient import TestClient
 
 from backend.app.db.base import SessionLocal
@@ -17,7 +18,6 @@ from backend.app.db.models.refresh_token import RefreshToken
 from backend.app.db.models.user import User
 from backend.app.main import app
 from backend.app.services import user_service
-from conftest import requires_db
 
 pytestmark = requires_db
 
@@ -122,24 +122,18 @@ def _mark_documents_extracted(case_id: str):
 
 class TestSubmitForReview:
     def test_blocked_without_required_documents(self, client, loan_officer, case_id):
-        resp = client.post(
-            f"/api/v1/cases/{case_id}/submit-for-review", headers=_auth(loan_officer["token"])
-        )
+        resp = client.post(f"/api/v1/cases/{case_id}/submit-for-review", headers=_auth(loan_officer["token"]))
         assert resp.status_code == 400
 
     def test_succeeds_once_documents_present(self, client, loan_officer, case_id):
         _mark_documents_extracted(case_id)
-        resp = client.post(
-            f"/api/v1/cases/{case_id}/submit-for-review", headers=_auth(loan_officer["token"])
-        )
+        resp = client.post(f"/api/v1/cases/{case_id}/submit-for-review", headers=_auth(loan_officer["token"]))
         assert resp.status_code == 200
         assert resp.json()["status"] == "under_review"
 
     def test_underwriter_cannot_submit_for_review(self, client, underwriter, case_id):
         _mark_documents_extracted(case_id)
-        resp = client.post(
-            f"/api/v1/cases/{case_id}/submit-for-review", headers=_auth(underwriter["token"])
-        )
+        resp = client.post(f"/api/v1/cases/{case_id}/submit-for-review", headers=_auth(underwriter["token"]))
         assert resp.status_code == 403
 
 
@@ -170,9 +164,7 @@ class TestDecisionEndpoint:
         assert resp.status_code == 200
         assert resp.json()["status"] == "denied"
 
-    def test_decision_without_override_reason_and_no_summary_is_400(
-        self, client, loan_officer, underwriter, case_id
-    ):
+    def test_decision_without_override_reason_and_no_summary_is_400(self, client, loan_officer, underwriter, case_id):
         _mark_documents_extracted(case_id)
         client.post(f"/api/v1/cases/{case_id}/submit-for-review", headers=_auth(loan_officer["token"]))
 

@@ -8,6 +8,7 @@ from fastapi.responses import FileResponse
 from sqlalchemy.orm import Session
 
 from backend.app.api.deps import get_current_user, get_db, require_roles
+from backend.app.db.models.document import Document
 from backend.app.db.models.enums import DocumentType, UserRole
 from backend.app.db.models.extracted_field import ExtractedField
 from backend.app.db.models.user import User
@@ -40,7 +41,7 @@ async def upload_document(
     doc_type: DocumentType = Form(...),
     file: UploadFile = File(...),
     db: Session = Depends(get_db),
-) -> DocumentRead:
+) -> Document:
     case = case_service.get_case(db, case_id)
     if case is None:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Case not found")
@@ -49,13 +50,9 @@ async def upload_document(
     try:
         document = document_service.save_document(db, case, doc_type, file.filename or "", content)
     except document_service.InvalidFileError as exc:
-        raise HTTPException(
-            status_code=status.HTTP_415_UNSUPPORTED_MEDIA_TYPE, detail=str(exc)
-        ) from exc
+        raise HTTPException(status_code=status.HTTP_415_UNSUPPORTED_MEDIA_TYPE, detail=str(exc)) from exc
     except document_service.FileTooLargeError as exc:
-        raise HTTPException(
-            status_code=status.HTTP_413_CONTENT_TOO_LARGE, detail=str(exc)
-        ) from exc
+        raise HTTPException(status_code=status.HTTP_413_CONTENT_TOO_LARGE, detail=str(exc)) from exc
 
     return document
 
@@ -65,7 +62,7 @@ def list_documents(
     case_id: uuid.UUID,
     db: Session = Depends(get_db),
     _current_user: User = Depends(get_current_user),
-) -> list[DocumentRead]:
+) -> list[Document]:
     case = case_service.get_case(db, case_id)
     if case is None:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Case not found")
@@ -82,7 +79,7 @@ def extract_document_fields(
     document_id: uuid.UUID,
     force: bool = False,
     db: Session = Depends(get_db),
-) -> list[ExtractedFieldRead]:
+) -> list[ExtractedField]:
     document = _get_document_or_404(db, case_id, document_id)
     try:
         return extract_document(db, document, force=force)
@@ -110,8 +107,6 @@ def list_extracted_fields(
     document_id: uuid.UUID,
     db: Session = Depends(get_db),
     _current_user: User = Depends(get_current_user),
-) -> list[ExtractedFieldRead]:
+) -> list[ExtractedField]:
     document = _get_document_or_404(db, case_id, document_id)
-    return (
-        db.query(ExtractedField).filter(ExtractedField.document_id == document.id).all()
-    )
+    return db.query(ExtractedField).filter(ExtractedField.document_id == document.id).all()

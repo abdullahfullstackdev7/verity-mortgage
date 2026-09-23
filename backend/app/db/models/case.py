@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import uuid
 from datetime import datetime
-from typing import TYPE_CHECKING, Optional
+from typing import TYPE_CHECKING
 
 from sqlalchemy import Enum as SAEnum
 from sqlalchemy import ForeignKey, func
@@ -33,17 +33,15 @@ class Case(Base):
         nullable=False,
         default=CaseStatus.SUBMITTED,
     )
-    assigned_underwriter_id: Mapped[Optional[uuid.UUID]] = mapped_column(
+    assigned_underwriter_id: Mapped[uuid.UUID | None] = mapped_column(
         PG_UUID(as_uuid=True), ForeignKey("users.id"), nullable=True
     )
     created_at: Mapped[datetime] = mapped_column(server_default=func.now(), nullable=False)
-    updated_at: Mapped[datetime] = mapped_column(
-        server_default=func.now(), onupdate=func.now(), nullable=False
-    )
+    updated_at: Mapped[datetime] = mapped_column(server_default=func.now(), onupdate=func.now(), nullable=False)
 
-    applicant: Mapped["Applicant"] = relationship(back_populates="cases")
-    assigned_underwriter: Mapped[Optional["User"]] = relationship()
-    documents: Mapped[list["Document"]] = relationship(back_populates="case")
-    discrepancies: Mapped[list["Discrepancy"]] = relationship(back_populates="case")
-    summaries: Mapped[list["CaseSummary"]] = relationship(back_populates="case")
-    audit_entries: Mapped[list["AuditLog"]] = relationship(back_populates="case")
+    applicant: Mapped[Applicant] = relationship(back_populates="cases")
+    assigned_underwriter: Mapped[User | None] = relationship()
+    documents: Mapped[list[Document]] = relationship(back_populates="case")
+    discrepancies: Mapped[list[Discrepancy]] = relationship(back_populates="case")
+    summaries: Mapped[list[CaseSummary]] = relationship(back_populates="case")
+    audit_entries: Mapped[list[AuditLog]] = relationship(back_populates="case")

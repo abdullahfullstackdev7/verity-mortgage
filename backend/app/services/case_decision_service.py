@@ -46,8 +46,7 @@ def submit_for_review(db: Session, case: Case, actor: str) -> Case:
     into under_review, once all required documents are present."""
     if case.status not in (CaseStatus.SUBMITTED, CaseStatus.DOCUMENTS_PENDING):
         raise TransitionNotAllowedError(
-            f"Case must be submitted or documents_pending to submit for review "
-            f"(current status: {case.status.value})"
+            f"Case must be submitted or documents_pending to submit for review (current status: {case.status.value})"
         )
 
     ok, reason = check_required_documents_present(db, case)
@@ -55,9 +54,7 @@ def submit_for_review(db: Session, case: Case, actor: str) -> Case:
         raise GuardNotSatisfiedError(reason)
 
     if case.status == CaseStatus.SUBMITTED:
-        case = transition_case(
-            db, case, CaseStatus.DOCUMENTS_PENDING, actor, "All required documents uploaded"
-        )
+        case = transition_case(db, case, CaseStatus.DOCUMENTS_PENDING, actor, "All required documents uploaded")
     return transition_case(db, case, CaseStatus.UNDER_REVIEW, actor, reason)
 
 
@@ -127,20 +124,14 @@ def record_underwriter_decision(
 
     if case.status not in (CaseStatus.UNDER_REVIEW, CaseStatus.REFERRED):
         raise TransitionNotAllowedError(
-            f"Case must be under_review or referred for a decision "
-            f"(current status: {case.status.value})"
+            f"Case must be under_review or referred for a decision (current status: {case.status.value})"
         )
 
     latest_summary = (
-        db.query(CaseSummary)
-        .filter(CaseSummary.case_id == case.id)
-        .order_by(CaseSummary.created_at.desc())
-        .first()
+        db.query(CaseSummary).filter(CaseSummary.case_id == case.id).order_by(CaseSummary.created_at.desc()).first()
     )
     system_recommendation = latest_summary.recommendation if latest_summary else None
-    recommended_status = (
-        RECOMMENDATION_TO_STATUS[system_recommendation] if system_recommendation else None
-    )
+    recommended_status = RECOMMENDATION_TO_STATUS[system_recommendation] if system_recommendation else None
     is_override = recommended_status is None or recommended_status != decision
 
     if is_override and not (override_reason and override_reason.strip()):

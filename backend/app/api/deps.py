@@ -3,10 +3,11 @@ from __future__ import annotations
 import uuid
 from collections.abc import Generator
 
-from fastapi import Depends, HTTPException, status
+from fastapi import Depends, HTTPException, Request, status
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 from sqlalchemy.orm import Session
 
+from backend.app.core.cookies import ACCESS_COOKIE_NAME
 from backend.app.core.security import TokenError, TokenType, decode_token
 from backend.app.db.base import SessionLocal
 from backend.app.db.models.enums import UserRole
@@ -24,10 +25,17 @@ def get_db() -> Generator[Session, None, None]:
 
 
 def get_current_user(
+    request: Request,
     credentials: HTTPAuthorizationCredentials | None = Depends(bearer_scheme),
     db: Session = Depends(get_db),
 ) -> User:
-    if credentials is None:
+    # Bearer header takes priority (used by the test suite and non-browser
+    # API/tooling clients); the httpOnly cookie is the fallback the browser
+    # frontend actually relies on, since it never has JS-readable access to
+    # a token to put in a header.
+    token = credentials.credentials if credentials else request.cookies.get(ACCESS_COOKIE_NAME)
+
+    if token is None:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Not authenticated",
@@ -35,7 +43,7 @@ def get_current_user(
         )
 
     try:
-        payload = decode_token(credentials.credentials, expected_type=TokenType.ACCESS)
+        payload = decode_token(token, expected_type=TokenType.ACCESS)
     except TokenError as exc:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,

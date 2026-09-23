@@ -35,17 +35,13 @@ def split_into_chunks(markdown_text: str) -> list[str]:
     return chunks
 
 
-def ingest_policy_guidelines(
-    db: Session, path: Path = DEFAULT_GUIDELINES_PATH, force: bool = False
-) -> int:
+def ingest_policy_guidelines(db: Session, path: Path = DEFAULT_GUIDELINES_PATH, force: bool = False) -> int:
     """Embed and store each section of the guidelines doc as a PolicyChunk.
     Idempotent: a no-op if chunks for this source doc already exist, unless
     force=True (in which case they're replaced)."""
     source_doc = path.name
 
-    existing_count = (
-        db.query(PolicyChunk).filter(PolicyChunk.source_doc == source_doc).count()
-    )
+    existing_count = db.query(PolicyChunk).filter(PolicyChunk.source_doc == source_doc).count()
     if existing_count and not force:
         return existing_count
 
@@ -56,7 +52,7 @@ def ingest_policy_guidelines(
     chunks = split_into_chunks(path.read_text(encoding="utf-8"))
     vectors = embed_texts(chunks)
 
-    for chunk_text, vector in zip(chunks, vectors):
+    for chunk_text, vector in zip(chunks, vectors, strict=True):
         db.add(PolicyChunk(source_doc=source_doc, chunk_text=chunk_text, embedding=vector))
     db.commit()
 

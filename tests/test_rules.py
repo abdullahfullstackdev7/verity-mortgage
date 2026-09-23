@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import uuid
+from typing import ClassVar
 
 from backend.app.db.models.enums import DiscrepancySeverity
 from backend.app.services.rules.rules import (
@@ -58,30 +59,43 @@ class TestCheckIncome:
 
 
 class TestCheckEmployerName:
-    IDENTICAL_A = [1.0, 0.0, 0.0]
-    IDENTICAL_B = [1.0, 0.0, 0.0]
-    SIMILAR = [0.75, 0.6614, 0.0]  # cosine similarity ~0.75 with IDENTICAL_A (between the 0.60/0.85 bands)
-    DISSIMILAR = [0.0, 1.0, 0.0]  # orthogonal -> similarity 0.0
+    IDENTICAL_A: ClassVar[list[float]] = [1.0, 0.0, 0.0]
+    IDENTICAL_B: ClassVar[list[float]] = [1.0, 0.0, 0.0]
+    # cosine similarity ~0.75 with IDENTICAL_A (between the 0.60/0.85 bands)
+    SIMILAR: ClassVar[list[float]] = [0.75, 0.6614, 0.0]
+    DISSIMILAR: ClassVar[list[float]] = [0.0, 1.0, 0.0]  # orthogonal -> similarity 0.0
 
     def test_matching_embeddings_is_clean(self):
         result = check_employer_name(
-            "Acme Corp", "Acme Corp", self.IDENTICAL_A, self.IDENTICAL_B,
-            "employer_name_paystub", DOC_ID,
+            "Acme Corp",
+            "Acme Corp",
+            self.IDENTICAL_A,
+            self.IDENTICAL_B,
+            "employer_name_paystub",
+            DOC_ID,
         )
         assert result is None
 
     def test_moderately_similar_is_minor(self):
         result = check_employer_name(
-            "Acme Corp", "Acme Corporation", self.IDENTICAL_A, self.SIMILAR,
-            "employer_name_paystub", DOC_ID,
+            "Acme Corp",
+            "Acme Corporation",
+            self.IDENTICAL_A,
+            self.SIMILAR,
+            "employer_name_paystub",
+            DOC_ID,
         )
         assert result is not None
         assert result.severity == DiscrepancySeverity.MINOR
 
     def test_dissimilar_is_major(self):
         result = check_employer_name(
-            "Acme Corp", "Totally Different Co", self.IDENTICAL_A, self.DISSIMILAR,
-            "employer_name_w2", DOC_ID,
+            "Acme Corp",
+            "Totally Different Co",
+            self.IDENTICAL_A,
+            self.DISSIMILAR,
+            "employer_name_w2",
+            DOC_ID,
         )
         assert result is not None
         assert result.severity == DiscrepancySeverity.MAJOR

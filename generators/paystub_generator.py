@@ -46,10 +46,8 @@ def _pay_period_dates(period_index: int) -> tuple[dt.date, dt.date, dt.date]:
 
 def build_context(
     applicant_id: str, stated_income: float, identity: Identity
-) -> dict:
-    document_income, decision = discrepancy.apply_income_discrepancy(
-        stated_income, applicant_id
-    )
+) -> tuple[dict, float, discrepancy.DiscrepancyDecision]:
+    document_income, decision = discrepancy.apply_income_discrepancy(stated_income, applicant_id)
 
     period_index = _period_index_for(applicant_id)
     period_start, period_end, pay_date = _pay_period_dates(period_index)
@@ -67,9 +65,7 @@ def build_context(
     ytd_state_tax = round(ytd_gross * STATE_TAX_RATE, 2)
     ytd_social_security = round(ytd_gross * SOCIAL_SECURITY_RATE, 2)
     ytd_medicare = round(ytd_gross * MEDICARE_RATE, 2)
-    ytd_net_pay = round(
-        ytd_gross - ytd_federal_tax - ytd_state_tax - ytd_social_security - ytd_medicare, 2
-    )
+    ytd_net_pay = round(ytd_gross - ytd_federal_tax - ytd_state_tax - ytd_social_security - ytd_medicare, 2)
 
     context = {
         "employer_name": identity.employer_name,

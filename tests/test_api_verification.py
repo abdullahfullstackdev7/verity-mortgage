@@ -3,6 +3,7 @@ from __future__ import annotations
 import uuid
 
 import pytest
+from conftest import requires_db
 from fastapi.testclient import TestClient
 
 from backend.app.db.base import SessionLocal
@@ -17,7 +18,6 @@ from backend.app.db.models.refresh_token import RefreshToken
 from backend.app.db.models.user import User
 from backend.app.main import app
 from backend.app.services import user_service
-from conftest import requires_db
 from generators.identity import build_identity
 from generators.paystub_generator import generate as generate_paystub
 
@@ -77,9 +77,7 @@ def case_with_extracted_paystub(client, loan_officer, tmp_path):
     generate_paystub(str(applicant_id), 60_000.0, identity, pdf_path)  # 40% below stated
 
     headers = {"Authorization": f"Bearer {loan_officer['token']}"}
-    case_resp = client.post(
-        "/api/v1/cases", json={"applicant_id": str(applicant_id)}, headers=headers
-    )
+    case_resp = client.post("/api/v1/cases", json={"applicant_id": str(applicant_id)}, headers=headers)
     case_id = case_resp.json()["id"]
 
     with open(pdf_path, "rb") as f:
@@ -124,6 +122,7 @@ class TestVerifyEndpoint:
 
     def test_verify_requires_authentication(self, client, case_with_extracted_paystub):
         case_id = case_with_extracted_paystub["case_id"]
+        client.cookies.clear()
         resp = client.post(f"/api/v1/cases/{case_id}/verify")
         assert resp.status_code == 401
 

@@ -12,7 +12,6 @@ from __future__ import annotations
 import hashlib
 import json
 import logging
-
 from typing import Literal
 
 from pydantic import BaseModel, ValidationError
@@ -42,20 +41,13 @@ class SummaryLLMOutput(BaseModel):
 def compute_discrepancy_fingerprint(discrepancies: list[Discrepancy]) -> str:
     """Deterministic hash of a case's current discrepancy set, independent
     of row insertion order or ids."""
-    normalized = sorted(
-        (d.field_name, d.severity.value, str(d.variance_pct)) for d in discrepancies
-    )
+    normalized = sorted((d.field_name, d.severity.value, str(d.variance_pct)) for d in discrepancies)
     payload = json.dumps(normalized, sort_keys=True)
     return hashlib.sha256(payload.encode("utf-8")).hexdigest()
 
 
 def _latest_summary(db: Session, case_id) -> CaseSummary | None:
-    return (
-        db.query(CaseSummary)
-        .filter(CaseSummary.case_id == case_id)
-        .order_by(CaseSummary.created_at.desc())
-        .first()
-    )
+    return db.query(CaseSummary).filter(CaseSummary.case_id == case_id).order_by(CaseSummary.created_at.desc()).first()
 
 
 def generate_case_summary(
@@ -78,6 +70,7 @@ def generate_case_summary(
         return existing
 
     applicant = db.get(Applicant, case.applicant_id)
+    assert applicant is not None  # applicant_id is a non-nullable FK on case
 
     query_text = build_retrieval_query(discrepancies)
     policy_chunks = retrieve_relevant_chunks(db, query_text)
@@ -90,9 +83,7 @@ def generate_case_summary(
             "summary_generation_failed",
             extra={"extra_fields": {"case_id": str(case.id), "reason": "no_provider_configured"}},
         )
-        raise SummaryGenerationError(
-            "No LLM provider is configured (set GROQ_API_KEY or GEMINI_API_KEY)."
-        )
+        raise SummaryGenerationError("No LLM provider is configured (set GROQ_API_KEY or GEMINI_API_KEY).")
 
     raw_text, provider_name, token_count = result
 
@@ -110,9 +101,7 @@ def generate_case_summary(
                 }
             },
         )
-        raise SummaryGenerationError(
-            f"LLM response from {provider_name} did not match the expected schema"
-        ) from exc
+        raise SummaryGenerationError(f"LLM response from {provider_name} did not match the expected schema") from exc
 
     summary = CaseSummary(
         case_id=case.id,

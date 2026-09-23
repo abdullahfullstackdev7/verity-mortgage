@@ -5,6 +5,7 @@ import uuid
 from pathlib import Path
 
 import pytest
+from conftest import requires_db
 from fastapi.testclient import TestClient
 
 from backend.app.core.config import settings
@@ -17,7 +18,6 @@ from backend.app.db.models.refresh_token import RefreshToken
 from backend.app.db.models.user import User
 from backend.app.main import app
 from backend.app.services import user_service
-from conftest import requires_db
 
 pytestmark = requires_db
 
@@ -48,9 +48,7 @@ def _cleanup_user(user_id: uuid.UUID) -> None:
 
 
 def _token_for(client: TestClient, creds: dict) -> str:
-    resp = client.post(
-        "/api/v1/auth/login", json={"email": creds["email"], "password": creds["password"]}
-    )
+    resp = client.post("/api/v1/auth/login", json={"email": creds["email"], "password": creds["password"]})
     return resp.json()["access_token"]
 
 
@@ -94,9 +92,7 @@ def applicant():
     db = SessionLocal()
     case_ids = [c.id for c in db.query(Case.id).filter(Case.applicant_id == applicant_id)]
     if case_ids:
-        db.query(Document).filter(Document.case_id.in_(case_ids)).delete(
-            synchronize_session=False
-        )
+        db.query(Document).filter(Document.case_id.in_(case_ids)).delete(synchronize_session=False)
         db.query(Case).filter(Case.id.in_(case_ids)).delete(synchronize_session=False)
     db.query(Applicant).filter(Applicant.id == applicant_id).delete()
     db.commit()
@@ -149,9 +145,7 @@ class TestCaseListingAndDetail:
         )
         case_id = create_resp.json()["id"]
 
-        list_resp = client.get(
-            "/api/v1/cases", params={"status": "submitted"}, headers=_auth(loan_officer["token"])
-        )
+        list_resp = client.get("/api/v1/cases", params={"status": "submitted"}, headers=_auth(loan_officer["token"]))
         assert list_resp.status_code == 200
         page = list_resp.json()
         assert any(c["id"] == case_id for c in page["items"])
@@ -192,17 +186,13 @@ class TestDocumentUpload:
         assert body["ocr_status"] == "pending_ocr"
         assert Path(body["file_path"]).exists()
 
-        list_resp = client.get(
-            f"/api/v1/cases/{case_id}/documents", headers=_auth(loan_officer["token"])
-        )
+        list_resp = client.get(f"/api/v1/cases/{case_id}/documents", headers=_auth(loan_officer["token"]))
         assert list_resp.status_code == 200
         assert len(list_resp.json()) == 1
 
         shutil.rmtree(Path(settings.document_storage_dir) / case_id, ignore_errors=True)
 
-    def test_non_pdf_content_is_rejected_even_with_pdf_extension(
-        self, client, loan_officer, applicant
-    ):
+    def test_non_pdf_content_is_rejected_even_with_pdf_extension(self, client, loan_officer, applicant):
         create_resp = client.post(
             "/api/v1/cases",
             json={"applicant_id": str(applicant)},

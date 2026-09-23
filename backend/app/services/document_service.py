@@ -29,9 +29,7 @@ def save_document(
     content: bytes,
 ) -> Document:
     if len(content) > settings.max_upload_size_bytes:
-        raise FileTooLargeError(
-            f"File exceeds the {settings.max_upload_size_bytes} byte upload limit"
-        )
+        raise FileTooLargeError(f"File exceeds the {settings.max_upload_size_bytes} byte upload limit")
 
     # Validate by content, not just the filename extension or client-sent
     # content-type, since either can be spoofed.
@@ -58,17 +56,8 @@ def save_document(
 
 
 def get_document_in_case(db: Session, case: Case, document_id: uuid.UUID) -> Document | None:
-    return (
-        db.query(Document)
-        .filter(Document.id == document_id, Document.case_id == case.id)
-        .one_or_none()
-    )
+    return db.query(Document).filter(Document.id == document_id, Document.case_id == case.id).one_or_none()
 
 
 def list_documents(db: Session, case: Case) -> list[Document]:
-    return (
-        db.query(Document)
-        .filter(Document.case_id == case.id)
-        .order_by(Document.uploaded_at)
-        .all()
-    )
+    return db.query(Document).filter(Document.case_id == case.id).order_by(Document.uploaded_at).all()

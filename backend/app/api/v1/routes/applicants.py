@@ -26,7 +26,8 @@ def list_applicants(
 ) -> Page[ApplicantRead]:
     items, total = applicant_service.list_applicants(db, search, page, size)
     pages = math.ceil(total / size) if total else 0
-    return Page[ApplicantRead](items=items, total=total, page=page, size=size, pages=pages)
+    # pydantic validates each ORM Applicant into an ApplicantRead here (from_attributes=True).
+    return Page[ApplicantRead](items=items, total=total, page=page, size=size, pages=pages)  # type: ignore[arg-type]
 
 
 @router.get("/{applicant_id}", response_model=ApplicantRead)

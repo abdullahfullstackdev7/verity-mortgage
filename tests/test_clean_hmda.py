@@ -108,8 +108,6 @@ class TestStratifiedDemoSample:
         assert len(demo) <= len(cleaned_df)
         assert set(demo["outcome"].unique()) <= set(cleaned_df["outcome"].unique())
 
-    def test_sample_larger_than_population_returns_full_population(
-        self, cleaned_df: pd.DataFrame
-    ):
+    def test_sample_larger_than_population_returns_full_population(self, cleaned_df: pd.DataFrame):
         demo = stratified_demo_sample(cleaned_df, sample_size=10_000, seed=42)
         assert len(demo) == len(cleaned_df)

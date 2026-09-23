@@ -3,6 +3,7 @@ from __future__ import annotations
 import uuid
 
 import pytest
+from conftest import requires_db
 from fastapi.testclient import TestClient
 
 from backend.app.db.base import SessionLocal
@@ -15,7 +16,6 @@ from backend.app.db.models.user import User
 from backend.app.main import app
 from backend.app.services import user_service
 from backend.app.services.llm import provider as llm_provider
-from conftest import requires_db
 
 pytestmark = requires_db
 
@@ -86,9 +86,7 @@ class TestSummaryEndpoints:
         assert resp.status_code == 404
 
     def test_generate_without_provider_returns_502(self, client, loan_officer, case, monkeypatch):
-        monkeypatch.setattr(
-            llm_provider, "complete_with_usage_and_failover", lambda prompt: None
-        )
+        monkeypatch.setattr(llm_provider, "complete_with_usage_and_failover", lambda prompt: None)
         headers = {"Authorization": f"Bearer {loan_officer['token']}"}
         resp = client.post(f"/api/v1/cases/{case}/summary", headers=headers)
         assert resp.status_code == 502
@@ -117,5 +115,6 @@ class TestSummaryEndpoints:
         assert get_resp.json()["id"] == body["id"]
 
     def test_generate_requires_authentication(self, client, case):
+        client.cookies.clear()
         resp = client.post(f"/api/v1/cases/{case}/summary")
         assert resp.status_code == 401

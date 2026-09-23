@@ -3,6 +3,7 @@ from __future__ import annotations
 import uuid
 
 import pytest
+from conftest import requires_db
 
 from backend.app.db.base import SessionLocal
 from backend.app.db.models.applicant import Applicant
@@ -14,7 +15,6 @@ from backend.app.services.summary.service import (
     SummaryGenerationError,
     generate_case_summary,
 )
-from conftest import requires_db
 
 pytestmark = requires_db
 
@@ -63,8 +63,7 @@ def case(db_session):
 
 def fake_complete_ok(prompt: str):
     return (
-        '{"narrative": "Income and employer checks are consistent with the application.", '
-        '"recommendation": "approve"}',
+        '{"narrative": "Income and employer checks are consistent with the application.", "recommendation": "approve"}',
         "fake-provider",
         123,
     )
@@ -72,8 +71,7 @@ def fake_complete_ok(prompt: str):
 
 def fake_complete_deny(prompt: str):
     return (
-        '{"narrative": "Income is materially overstated relative to the pay stub.", '
-        '"recommendation": "deny"}',
+        '{"narrative": "Income is materially overstated relative to the pay stub.", "recommendation": "deny"}',
         "fake-provider",
         150,
     )
@@ -93,16 +91,12 @@ class TestGenerateCaseSummary:
 
     def test_invalid_json_response_raises(self, db_session, case):
         with pytest.raises(SummaryGenerationError):
-            generate_case_summary(
-                db_session, case, complete_fn=lambda prompt: ("not json", "fake", 10)
-            )
+            generate_case_summary(db_session, case, complete_fn=lambda prompt: ("not json", "fake", 10))
 
     def test_invalid_recommendation_value_raises(self, db_session, case):
-        bad = lambda prompt: (  # noqa: E731
-            '{"narrative": "x", "recommendation": "maybe"}',
-            "fake",
-            10,
-        )
+        def bad(prompt: str):
+            return '{"narrative": "x", "recommendation": "maybe"}', "fake", 10
+
         with pytest.raises(SummaryGenerationError):
             generate_case_summary(db_session, case, complete_fn=bad)
 
@@ -121,9 +115,7 @@ class TestGenerateCaseSummary:
 
     def test_force_regenerates_even_if_unchanged(self, db_session, case):
         first = generate_case_summary(db_session, case, complete_fn=fake_complete_ok)
-        second = generate_case_summary(
-            db_session, case, force=True, complete_fn=fake_complete_ok
-        )
+        second = generate_case_summary(db_session, case, force=True, complete_fn=fake_complete_ok)
         assert second.id != first.id
 
     def test_new_discrepancy_triggers_regeneration(self, db_session, case):

@@ -3,6 +3,7 @@ from __future__ import annotations
 import uuid
 
 import pytest
+from conftest import requires_db
 from fastapi.testclient import TestClient
 
 from backend.app.db.base import SessionLocal
@@ -16,7 +17,6 @@ from backend.app.db.models.refresh_token import RefreshToken
 from backend.app.db.models.user import User
 from backend.app.main import app
 from backend.app.services import user_service
-from conftest import requires_db
 from generators.identity import build_identity
 from generators.paystub_generator import generate as generate_paystub
 
@@ -73,9 +73,7 @@ def case_with_uploaded_paystub(client, loan_officer, tmp_path):
     generate_paystub(str(applicant_id), 92000.0, identity, pdf_path)
 
     headers = {"Authorization": f"Bearer {loan_officer['token']}"}
-    case_resp = client.post(
-        "/api/v1/cases", json={"applicant_id": str(applicant_id)}, headers=headers
-    )
+    case_resp = client.post("/api/v1/cases", json={"applicant_id": str(applicant_id)}, headers=headers)
     case_id = case_resp.json()["id"]
 
     with open(pdf_path, "rb") as f:
@@ -105,33 +103,31 @@ class TestExtractionEndpoint:
         case_id = case_with_uploaded_paystub["case_id"]
         document_id = case_with_uploaded_paystub["document_id"]
 
-        extract_resp = client.post(
-            f"/api/v1/cases/{case_id}/documents/{document_id}/extract", headers=headers
-        )
+        extract_resp = client.post(f"/api/v1/cases/{case_id}/documents/{document_id}/extract", headers=headers)
         assert extract_resp.status_code == 200
         fields = extract_resp.json()
         field_names = {f["field_name"] for f in fields}
         assert "employer_name" in field_names
         assert "gross_pay_current" in field_names
 
-        list_resp = client.get(
-            f"/api/v1/cases/{case_id}/documents/{document_id}/fields", headers=headers
-        )
+        list_resp = client.get(f"/api/v1/cases/{case_id}/documents/{document_id}/fields", headers=headers)
         assert list_resp.status_code == 200
         assert len(list_resp.json()) == len(fields)
 
     def test_extract_requires_authentication(self, client, case_with_uploaded_paystub):
         case_id = case_with_uploaded_paystub["case_id"]
         document_id = case_with_uploaded_paystub["document_id"]
+        # The fixture chain already logged in on this client, leaving an
+        # auth cookie in its jar -- clear it so this actually exercises an
+        # unauthenticated request.
+        client.cookies.clear()
         resp = client.post(f"/api/v1/cases/{case_id}/documents/{document_id}/extract")
         assert resp.status_code == 401
 
     def test_extract_unknown_document_returns_404(self, client, loan_officer, case_with_uploaded_paystub):
         headers = {"Authorization": f"Bearer {loan_officer['token']}"}
         case_id = case_with_uploaded_paystub["case_id"]
-        resp = client.post(
-            f"/api/v1/cases/{case_id}/documents/{uuid.uuid4()}/extract", headers=headers
-        )
+        resp = client.post(f"/api/v1/cases/{case_id}/documents/{uuid.uuid4()}/extract", headers=headers)
         assert resp.status_code == 404
 
 
@@ -141,9 +137,7 @@ class TestDocumentFileDownload:
         case_id = case_with_uploaded_paystub["case_id"]
         document_id = case_with_uploaded_paystub["document_id"]
 
-        resp = client.get(
-            f"/api/v1/cases/{case_id}/documents/{document_id}/file", headers=headers
-        )
+        resp = client.get(f"/api/v1/cases/{case_id}/documents/{document_id}/file", headers=headers)
         assert resp.status_code == 200
         assert resp.headers["content-type"] == "application/pdf"
         assert resp.content.startswith(b"%PDF")
@@ -151,13 +145,12 @@ class TestDocumentFileDownload:
     def test_requires_authentication(self, client, case_with_uploaded_paystub):
         case_id = case_with_uploaded_paystub["case_id"]
         document_id = case_with_uploaded_paystub["document_id"]
+        client.cookies.clear()
         resp = client.get(f"/api/v1/cases/{case_id}/documents/{document_id}/file")
         assert resp.status_code == 401
 
     def test_unknown_document_returns_404(self, client, loan_officer, case_with_uploaded_paystub):
         headers = {"Authorization": f"Bearer {loan_officer['token']}"}
         case_id = case_with_uploaded_paystub["case_id"]
-        resp = client.get(
-            f"/api/v1/cases/{case_id}/documents/{uuid.uuid4()}/file", headers=headers
-        )
+        resp = client.get(f"/api/v1/cases/{case_id}/documents/{uuid.uuid4()}/file", headers=headers)
         assert resp.status_code == 404

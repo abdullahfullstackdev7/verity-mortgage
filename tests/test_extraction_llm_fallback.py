@@ -21,9 +21,7 @@ class TestExtractMissingFieldsViaLlm:
             calls.append(prompt)
             return ('{"employer_name": "Acme"}', "fake")
 
-        result = extract_missing_fields_via_llm(
-            DocumentType.PAYSTUB, "text", set(), complete_fn=fake_complete
-        )
+        result = extract_missing_fields_via_llm(DocumentType.PAYSTUB, "text", set(), complete_fn=fake_complete)
         assert result == {}
         assert calls == []
 

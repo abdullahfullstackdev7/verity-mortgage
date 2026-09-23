@@ -3,6 +3,7 @@ from __future__ import annotations
 import uuid
 
 import pytest
+from conftest import requires_db
 
 from backend.app.db.base import SessionLocal
 from backend.app.db.models.applicant import Applicant
@@ -28,7 +29,6 @@ from backend.app.services.case_state_machine import (
     GuardNotSatisfiedError,
     TransitionNotAllowedError,
 )
-from conftest import requires_db
 
 pytestmark = requires_db
 
@@ -99,12 +99,7 @@ class TestSubmitForReview:
         result = submit_for_review(db_session, case, actor="officer@example.com")
         assert result.status == CaseStatus.UNDER_REVIEW
 
-        entries = (
-            db_session.query(AuditLog)
-            .filter(AuditLog.case_id == case.id)
-            .order_by(AuditLog.created_at)
-            .all()
-        )
+        entries = db_session.query(AuditLog).filter(AuditLog.case_id == case.id).order_by(AuditLog.created_at).all()
         actions = [e.action for e in entries]
         assert actions == ["status_changed_to_documents_pending", "status_changed_to_under_review"]
 
@@ -189,20 +184,14 @@ class TestRecordUnderwriterDecision:
 
     def test_wrong_status_is_rejected(self, db_session, case):
         with pytest.raises(TransitionNotAllowedError):
-            record_underwriter_decision(
-                db_session, case, CaseStatus.APPROVED, None, actor="uw@example.com"
-            )
+            record_underwriter_decision(db_session, case, CaseStatus.APPROVED, None, actor="uw@example.com")
 
     def test_override_reason_required_when_no_summary_exists(self, db_session, case):
         self._to_under_review(db_session, case)
         with pytest.raises(DecisionError):
-            record_underwriter_decision(
-                db_session, case, CaseStatus.APPROVED, None, actor="uw@example.com"
-            )
+            record_underwriter_decision(db_session, case, CaseStatus.APPROVED, None, actor="uw@example.com")
 
-    def test_override_reason_required_when_decision_differs_from_recommendation(
-        self, db_session, case
-    ):
+    def test_override_reason_required_when_decision_differs_from_recommendation(self, db_session, case):
         self._to_under_review(db_session, case)
         db_session.add(
             CaseSummary(
@@ -217,9 +206,7 @@ class TestRecordUnderwriterDecision:
         db_session.commit()
 
         with pytest.raises(DecisionError):
-            record_underwriter_decision(
-                db_session, case, CaseStatus.DENIED, None, actor="uw@example.com"
-            )
+            record_underwriter_decision(db_session, case, CaseStatus.DENIED, None, actor="uw@example.com")
 
     def test_accepting_recommendation_does_not_require_reason(self, db_session, case):
         self._to_under_review(db_session, case)
@@ -235,9 +222,7 @@ class TestRecordUnderwriterDecision:
         )
         db_session.commit()
 
-        result = record_underwriter_decision(
-            db_session, case, CaseStatus.APPROVED, None, actor="uw@example.com"
-        )
+        result = record_underwriter_decision(db_session, case, CaseStatus.APPROVED, None, actor="uw@example.com")
         assert result.status == CaseStatus.APPROVED
 
     def test_override_with_reason_succeeds_and_is_logged(self, db_session, case):

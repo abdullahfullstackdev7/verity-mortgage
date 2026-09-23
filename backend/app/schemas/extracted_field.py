@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import uuid
 
-from pydantic import ConfigDict, BaseModel
+from pydantic import BaseModel, ConfigDict
 
 
 class ExtractedFieldRead(BaseModel):

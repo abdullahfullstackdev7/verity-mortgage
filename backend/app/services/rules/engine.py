@@ -103,9 +103,7 @@ def _evaluate(db: Session, case: Case, applicant: Applicant) -> list[RuleResult]
         fields = _fields_by_name(db, w2_doc.id)
         box1_field = fields.get("box1_wages")
         if box1_field is not None:
-            result = check_income(
-                stated_income, float(box1_field.extracted_value), "income_w2", w2_doc.id
-            )
+            result = check_income(stated_income, float(box1_field.extracted_value), "income_w2", w2_doc.id)
             if result:
                 results.append(result)
 
@@ -130,9 +128,7 @@ def _evaluate(db: Session, case: Case, applicant: Applicant) -> list[RuleResult]
         fields = _fields_by_name(db, bank_doc.id)
         deposit_field = fields.get("payroll_deposit_total")
         if deposit_field is not None:
-            result = check_bank_deposit(
-                stated_income, float(deposit_field.extracted_value), bank_doc.id
-            )
+            result = check_bank_deposit(stated_income, float(deposit_field.extracted_value), bank_doc.id)
             if result:
                 results.append(result)
 
@@ -154,6 +150,7 @@ def run_verification(db: Session, case: Case, force: bool = False) -> list[Discr
         db.commit()
 
     applicant = db.get(Applicant, case.applicant_id)
+    assert applicant is not None  # applicant_id is a non-nullable FK on case
     results = _evaluate(db, case, applicant)
 
     discrepancies: list[Discrepancy] = []

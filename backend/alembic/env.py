@@ -7,7 +7,7 @@ from sqlalchemy import engine_from_config, pool
 
 from backend.app.core.config import settings
 from backend.app.db.base import Base
-from backend.app.db.models import *  # noqa: F401,F403  (registers all models on Base.metadata)
+from backend.app.db.models import *
 
 config = context.config
 config.set_main_option("sqlalchemy.url", settings.database_url)

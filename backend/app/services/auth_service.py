@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import uuid
 from dataclasses import dataclass
-from datetime import datetime, timedelta, timezone
+from datetime import UTC, datetime, timedelta
 
 from sqlalchemy.orm import Session
 
@@ -32,7 +32,7 @@ class TokenPair:
 
 def _issue_token_pair(db: Session, user: User) -> TokenPair:
     jti = uuid.uuid4()
-    expires_at = datetime.now(timezone.utc) + timedelta(days=settings.refresh_token_expire_days)
+    expires_at = datetime.now(UTC) + timedelta(days=settings.refresh_token_expire_days)
     db.add(RefreshToken(id=jti, user_id=user.id, expires_at=expires_at))
 
     access_token = create_access_token(user.id, user.role.value)
@@ -58,7 +58,7 @@ def refresh(db: Session, refresh_token_str: str) -> TokenPair:
 
     jti = uuid.UUID(payload["jti"])
     stored = db.get(RefreshToken, jti)
-    now = datetime.now(timezone.utc)
+    now = datetime.now(UTC)
 
     if stored is None or stored.revoked_at is not None or stored.expires_at < now:
         raise AuthError("Refresh token is invalid, expired, or has already been used")
@@ -83,5 +83,5 @@ def logout(db: Session, refresh_token_str: str) -> None:
     jti = uuid.UUID(payload["jti"])
     stored = db.get(RefreshToken, jti)
     if stored is not None and stored.revoked_at is None:
-        stored.revoked_at = datetime.now(timezone.utc)
+        stored.revoked_at = datetime.now(UTC)
         db.commit()

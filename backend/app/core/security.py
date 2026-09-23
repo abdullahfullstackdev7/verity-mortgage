@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import uuid
-from datetime import datetime, timedelta, timezone
+from datetime import UTC, datetime, timedelta
 from enum import StrEnum
 
 import bcrypt
@@ -30,7 +30,7 @@ def verify_password(password: str, hashed_password: str) -> bool:
 def _create_token(
     subject: uuid.UUID, role: str, token_type: TokenType, expires_delta: timedelta, jti: uuid.UUID
 ) -> str:
-    now = datetime.now(timezone.utc)
+    now = datetime.now(UTC)
     payload = {
         "sub": str(subject),
         "role": role,

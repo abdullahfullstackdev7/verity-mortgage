@@ -50,9 +50,7 @@ def can_transition(current: CaseStatus, target: CaseStatus) -> bool:
 
 
 def check_required_documents_present(db: Session, case: Case) -> tuple[bool, str]:
-    present_types = {
-        row[0] for row in db.query(Document.doc_type).filter(Document.case_id == case.id).all()
-    }
+    present_types = {row[0] for row in db.query(Document.doc_type).filter(Document.case_id == case.id).all()}
     missing = REQUIRED_DOCUMENT_TYPES - present_types
     if missing:
         missing_names = ", ".join(sorted(t.value for t in missing))
@@ -89,9 +87,7 @@ def transition_case(
     Raises TransitionNotAllowedError if the edge isn't in the transition
     table; callers are responsible for checking any guard condition first."""
     if not can_transition(case.status, target_status):
-        raise TransitionNotAllowedError(
-            f"Cannot transition case from {case.status.value} to {target_status.value}"
-        )
+        raise TransitionNotAllowedError(f"Cannot transition case from {case.status.value} to {target_status.value}")
 
     case.status = target_status
     db.add(

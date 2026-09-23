@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import uuid
-from typing import TYPE_CHECKING, Optional
+from typing import TYPE_CHECKING
 
 from sqlalchemy import ForeignKey, Numeric, String, Text
 from sqlalchemy.dialects.postgresql import UUID as PG_UUID
@@ -22,7 +22,7 @@ class ExtractedField(Base):
     )
     field_name: Mapped[str] = mapped_column(String(255), nullable=False)
     extracted_value: Mapped[str] = mapped_column(String(1000), nullable=False)
-    confidence_score: Mapped[Optional[float]] = mapped_column(Numeric(5, 4), nullable=True)
-    raw_text_snippet: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
+    confidence_score: Mapped[float | None] = mapped_column(Numeric(5, 4), nullable=True)
+    raw_text_snippet: Mapped[str | None] = mapped_column(Text, nullable=True)
 
-    document: Mapped["Document"] = relationship(back_populates="extracted_fields")
+    document: Mapped[Document] = relationship(back_populates="extracted_fields")

@@ -36,6 +36,6 @@ class Document(Base):
         default=OcrStatus.PENDING_OCR,
     )
 
-    case: Mapped["Case"] = relationship(back_populates="documents")
-    extracted_fields: Mapped[list["ExtractedField"]] = relationship(back_populates="document")
-    embeddings: Mapped[list["DocumentEmbedding"]] = relationship(back_populates="document")
+    case: Mapped[Case] = relationship(back_populates="documents")
+    extracted_fields: Mapped[list[ExtractedField]] = relationship(back_populates="document")
+    embeddings: Mapped[list[DocumentEmbedding]] = relationship(back_populates="document")

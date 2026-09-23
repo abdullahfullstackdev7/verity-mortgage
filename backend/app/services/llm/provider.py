@@ -16,9 +16,7 @@ import httpx
 from backend.app.core.config import settings
 
 GROQ_URL = "https://api.groq.com/openai/v1/chat/completions"
-GEMINI_URL_TEMPLATE = (
-    "https://generativelanguage.googleapis.com/v1beta/models/{model}:generateContent"
-)
+GEMINI_URL_TEMPLATE = "https://generativelanguage.googleapis.com/v1beta/models/{model}:generateContent"
 REQUEST_TIMEOUT_SECONDS = 30
 
 
