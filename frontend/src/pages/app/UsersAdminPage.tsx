@@ -59,8 +59,13 @@ export function UsersAdminPage() {
     } catch (err) {
       if (err instanceof ApiError && err.status === 409) {
         setCreateError('A user with that email already exists.')
+      } else if (err instanceof ApiError && err.status === 422 && Array.isArray(err.detail)) {
+        const messages = err.detail
+          .map((issue) => (issue as { msg?: string }).msg)
+          .filter((msg): msg is string => Boolean(msg))
+        setCreateError(messages.join(' ') || 'Could not create user: invalid input.')
       } else {
-        setCreateError('Could not create user. Password must be at least 8 characters.')
+        setCreateError('Could not create user.')
       }
     } finally {
       setCreating(false)
@@ -94,7 +99,8 @@ export function UsersAdminPage() {
             id="new-user-password"
             type="password"
             required
-            minLength={8}
+            minLength={10}
+            placeholder="At least 10 characters, with a letter and a digit"
             value={password}
             onChange={(e) => setPassword(e.target.value)}
           />
