@@ -3,7 +3,7 @@ from __future__ import annotations
 import uuid
 from typing import TYPE_CHECKING
 
-from sqlalchemy import ForeignKey, Numeric, String, Text
+from sqlalchemy import ForeignKey, Numeric, String, Text, UniqueConstraint
 from sqlalchemy.dialects.postgresql import UUID as PG_UUID
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
@@ -15,6 +15,12 @@ if TYPE_CHECKING:
 
 class ExtractedField(Base):
     __tablename__ = "extracted_fields"
+    __table_args__ = (
+        # Same race-condition guard as DocumentEmbedding: prevents concurrent
+        # or rapid repeat extraction calls on one document from duplicating
+        # its field rows.
+        UniqueConstraint("document_id", "field_name", name="uq_extracted_fields_document_id_field_name"),
+    )
 
     id: Mapped[uuid.UUID] = mapped_column(PG_UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
     document_id: Mapped[uuid.UUID] = mapped_column(

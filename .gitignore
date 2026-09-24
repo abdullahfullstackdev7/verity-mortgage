@@ -1,5 +1,6 @@
 # local-only, never commit
 git_verify.md
+plan (1).md
 
 # Python
 __pycache__/

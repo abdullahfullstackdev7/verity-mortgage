@@ -9,6 +9,7 @@ from __future__ import annotations
 
 from pathlib import Path
 
+from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
 from backend.app.db.models.document import Document
@@ -101,7 +102,16 @@ def extract_document(db: Session, document: Document, force: bool = False) -> li
         )
 
     document.ocr_status = OcrStatus.COMPLETED
-    db.commit()
+    try:
+        db.commit()
+    except IntegrityError:
+        # A concurrent call for the same document (e.g. a double-click, or
+        # two requests racing the check-then-insert idempotency check above)
+        # already committed its own rows first; the unique constraint on
+        # (document_id, field_name) rejects this one. Fall back to whatever
+        # that other call persisted, rather than surfacing a 500.
+        db.rollback()
+        return _existing_fields(db, document.id)
     for field in extracted_fields:
         db.refresh(field)
 

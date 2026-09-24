@@ -17,7 +17,7 @@ routing recommendation — all backed by a complete, queryable audit trail.
 
 ## Overview
 
-Mortgage underwriting is, today, still largely a manual reading exercise: a
+Mortgage underwriting today is still largely a manual reading exercise: a
 loan officer or underwriter opens a pay stub, a bank statement, and a W-2,
 and mentally cross-checks every figure against what the applicant declared
 on the application. It does not scale, it is inconsistent across
